@@ -93,6 +93,7 @@ import com.example.ui.components.LiquidGlassTextField
 import com.example.ui.theme.DarkNavy
 import com.example.ui.theme.GlassBorderLight
 import com.example.ui.theme.GlassSurfaceMedium
+import com.example.ui.theme.NeonGreen
 
 /**
  * Screen for Discover Nearby Gyms.
@@ -1225,14 +1226,14 @@ private fun DarkLeafletMapView(
                         // Glow behind route
                         drawPath(
                             routePath,
-                            color = Color(0x33A6CE39),
+                            color = NeonGreen.copy(alpha = 0.25f),
                             style = Stroke(width = 8f, cap = StrokeCap.Round, join = StrokeJoin.Round)
                         )
 
                         // Dashed neon route
                         drawPath(
                             routePath,
-                            color = Color(0xFFA6CE39),
+                            color = NeonGreen,
                             style = Stroke(
                                 width = 3.5f,
                                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 10f), 0f),
@@ -1324,7 +1325,7 @@ private fun DarkLeafletMapView(
                                 modifier = Modifier
                                     .size(5.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFA6CE39))
+                                    .background(NeonGreen)
                             )
                             Spacer(modifier = Modifier.width(5.dp))
                             Text(

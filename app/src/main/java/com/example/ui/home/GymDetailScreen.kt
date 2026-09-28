@@ -54,6 +54,7 @@ import com.example.ui.theme.DarkNavyDepth
 import com.example.ui.theme.GlassBorderLight
 import com.example.ui.theme.GlassBorderSpecular
 import com.example.ui.theme.GlassSurfaceMedium
+import com.example.ui.theme.NeonGreen
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextSubtle
 import com.example.ui.theme.TextWhite
@@ -139,7 +140,7 @@ fun GymDetailScreen(
                         .padding(start = 20.dp, bottom = 12.dp)
                         .clip(RoundedCornerShape(50.dp))
                         .background(Color(0xDD222021))
-                        .border(1.dp, Color(0x40A6CE39), RoundedCornerShape(50.dp))
+                        .border(1.dp, NeonGreen.copy(alpha = 0.40f), RoundedCornerShape(50.dp))
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(

@@ -113,7 +113,7 @@ fun OnboardingScreen(
                     brush = Brush.radialGradient(
                         colors = listOf(
                             Color(0x18222021),
-                            Color(0x05A6CE39),
+                            Color(0x082DD4BF),
                             Color.Transparent
                         ),
                         radius = 1200f

@@ -87,7 +87,7 @@ fun FloatingBlurBalls(
         drawAuroraOrb(
             center = Offset(orb2X, orb2Y),
             radius = width * 0.78f,
-            color = Color(0x45A6CE39) // Cult.fit Neon Lime Green
+            color = Color(0x2034D399) // Soft Emerald Mint Ambient
         )
 
         // ----------------------------------------------------

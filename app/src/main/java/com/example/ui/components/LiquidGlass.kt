@@ -345,7 +345,7 @@ fun LiquidGlassButton(
                 brush = Brush.linearGradient(
                     colors = listOf(
                         GlassBorderSpecular,
-                        Color(0x40A6CE39),
+                        GlassBorderSpecular,
                         GlassBorderLight,
                         Color(0x20FFFFFF)
                     )
@@ -468,7 +468,7 @@ fun LiquidGlassSegmentedControl(
                                         brush = Brush.linearGradient(
                                             colors = listOf(
                                                 Color(0x60FFFFFF),
-                                                Color(0x20A6CE39)
+                                                Color(0x30FFFFFF)
                                             )
                                         ),
                                         shape = RoundedCornerShape(18.dp)

@@ -249,7 +249,7 @@ fun CheckInScreen(
                     modifier = Modifier
                         .size(80.dp)
                         .clip(CircleShape)
-                        .background(Color(0x20A6CE39))
+                        .background(NeonGreen.copy(alpha = 0.20f))
                         .border(1.5.dp, NeonGreen, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {

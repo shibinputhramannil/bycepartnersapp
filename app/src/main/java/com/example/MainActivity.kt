@@ -22,11 +22,13 @@ import com.example.ui.home.ProfileScreen
 import com.example.ui.home.SAMPLE_GYMS
 import com.example.ui.home.VisitHistoryScreen
 import com.example.ui.onboarding.OnboardingScreen
+import com.example.ui.owner.GymOwnerMainScreen
 import com.example.ui.theme.MyApplicationTheme
 
 enum class AppScreen {
     ONBOARDING,
     AUTH,
+    GYM_OWNER_DASHBOARD,
     HOME,
     CHECK_IN,
     GYM_DETAIL,
@@ -42,11 +44,19 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     setContent {
       MyApplicationTheme {
-        var currentScreen by remember { mutableStateOf(AppScreen.ONBOARDING) }
+        var currentScreen by remember { mutableStateOf(AppScreen.GYM_OWNER_DASHBOARD) }
         var selectedGymForDetail by remember { mutableStateOf<GymLocation?>(null) }
 
         Crossfade(targetState = currentScreen, label = "screen_transition") { screen ->
           when (screen) {
+            AppScreen.GYM_OWNER_DASHBOARD -> {
+              GymOwnerMainScreen(
+                onLogout = {
+                  currentScreen = AppScreen.AUTH
+                },
+                modifier = Modifier.fillMaxSize()
+              )
+            }
             AppScreen.ONBOARDING -> {
               OnboardingScreen(
                 onGetStartedClick = {
@@ -58,7 +68,7 @@ class MainActivity : ComponentActivity() {
             AppScreen.AUTH -> {
               AuthScreen(
                 onAuthComplete = {
-                  currentScreen = AppScreen.HOME
+                  currentScreen = AppScreen.GYM_OWNER_DASHBOARD
                 },
                 onBackToOnboarding = {
                   currentScreen = AppScreen.ONBOARDING
