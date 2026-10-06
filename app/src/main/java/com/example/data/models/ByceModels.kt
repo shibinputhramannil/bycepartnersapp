@@ -347,3 +347,32 @@ data class AdminActivityLogItem(
     val module: String,
     val timestamp: String
 )
+
+/**
+ * QR & Barcode Scanner Models
+ */
+enum class ScannedQrType {
+    MEMBER_CHECKIN,
+    BOOKING_PASS,
+    PAYMENT_UPI,
+    GYM_FACILITY,
+    UNIVERSAL_CODE
+}
+
+data class ScannedQrResult(
+    val rawPayload: String,
+    val type: ScannedQrType,
+    val title: String,
+    val subtitle: String,
+    val badgeText: String,
+    val customerId: String? = null,
+    val customerName: String? = null,
+    val membershipPlan: String? = null,
+    val status: String? = null,
+    val shift: String? = null,
+    val time: String? = null,
+    val amount: Double? = null,
+    val formatName: String = "QR Code",
+    val isRecognizedGymEntity: Boolean = true,
+    val timestamp: String = "Just now"
+)

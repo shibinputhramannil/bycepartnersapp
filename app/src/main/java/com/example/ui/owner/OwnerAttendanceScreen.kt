@@ -39,6 +39,7 @@ fun OwnerAttendanceScreen(
     var showManualCheckInDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var exportFormat by remember { mutableStateOf("CSV") }
+    var showCameraScannerModal by remember { mutableStateOf(false) }
 
     // Modal dialog states for the 4 KPI cards
     var showTodayCheckinsModal by remember { mutableStateOf(false) }
@@ -93,6 +94,22 @@ fun OwnerAttendanceScreen(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Camera Scan QR Button
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(StatusActiveGreen)
+                            .clickable { showCameraScannerModal = true }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR", tint = Color.Black, modifier = Modifier.size(15.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = "Scan", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        }
+                    }
+
                     // Export Button
                     Box(
                         modifier = Modifier
@@ -322,6 +339,16 @@ fun OwnerAttendanceScreen(
                 selectedFormat = exportFormat,
                 onFormatChange = { exportFormat = it },
                 onDismiss = { showExportDialog = false }
+            )
+        }
+
+        // Camera QR Scanner Modal
+        if (showCameraScannerModal) {
+            OwnerQrScannerModal(
+                onDismiss = { showCameraScannerModal = false },
+                onScannedSuccessfully = {
+                    refreshTrigger++
+                }
             )
         }
     }

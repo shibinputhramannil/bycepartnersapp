@@ -712,4 +712,133 @@ object GymOwnerRepository {
             timestamp = "Today, just now"
         ))
     }
+
+    // ----------------------------------------------------
+    // UNIVERSAL QR & BARCODE SCANNER ENGINE
+    // ----------------------------------------------------
+    fun processScannedQrPayload(payload: String, formatName: String = "QR Code"): ScannedQrResult {
+        val trimmed = payload.trim()
+
+        // 1. UPI Payment QR Detection
+        if (trimmed.startsWith("upi://pay", ignoreCase = true) || trimmed.contains("pa=") || trimmed.startsWith("BYCE-PAY-", ignoreCase = true)) {
+            val amountRegex = Regex("[?&]am=([0-9.]+)")
+            val payeeRegex = Regex("[?&]pn=([^&]+)")
+            val amount = amountRegex.find(trimmed)?.groupValues?.getOrNull(1)?.toDoubleOrNull() ?: 1499.0
+            val payee = payeeRegex.find(trimmed)?.groupValues?.getOrNull(1)?.replace("%20", " ") ?: "Iron House Fitness"
+
+            return ScannedQrResult(
+                rawPayload = trimmed,
+                type = ScannedQrType.PAYMENT_UPI,
+                title = "UPI Payment QR Code",
+                subtitle = "Payee: $payee · ₹${amount.toInt()}",
+                badgeText = "💳 Verified UPI Payment",
+                amount = amount,
+                formatName = formatName,
+                isRecognizedGymEntity = true
+            )
+        }
+
+        // 2. Gym Facility / Locker QR
+        if (trimmed.startsWith("BYCE-GYM-", ignoreCase = true)) {
+            return ScannedQrResult(
+                rawPayload = trimmed,
+                type = ScannedQrType.GYM_FACILITY,
+                title = "Iron House Fitness Facility Pass",
+                subtitle = "Kozhikode, Kerala · Access Gate / Reception Verified",
+                badgeText = "🏋️ Gym Facility Token",
+                formatName = formatName,
+                isRecognizedGymEntity = true
+            )
+        }
+
+        // 3. Booking QR Pass
+        if (trimmed.startsWith("BYCE-BOOKING-", ignoreCase = true) || trimmed.contains("Booking", ignoreCase = true)) {
+            val matchedBooking = sampleBookings.firstOrNull { 
+                trimmed.contains(it.customerName, ignoreCase = true) || trimmed.contains(it.id, ignoreCase = true)
+            } ?: sampleBookings.first()
+
+            return ScannedQrResult(
+                rawPayload = trimmed,
+                type = ScannedQrType.BOOKING_PASS,
+                title = matchedBooking.customerName,
+                subtitle = "${matchedBooking.shift} (${matchedBooking.time})",
+                badgeText = "📅 Slot Reservation Verified",
+                customerId = matchedBooking.id,
+                customerName = matchedBooking.customerName,
+                membershipPlan = matchedBooking.membershipPlan,
+                status = matchedBooking.status,
+                shift = matchedBooking.shift,
+                time = matchedBooking.time,
+                formatName = formatName,
+                isRecognizedGymEntity = true
+            )
+        }
+
+        // 4. Member Check-in QR Pass / Digital ID
+        val matchedCustomer = sampleCustomers.firstOrNull { customer ->
+            trimmed.contains(customer.name, ignoreCase = true) ||
+            trimmed.contains(customer.id, ignoreCase = true) ||
+            trimmed.contains(customer.email, ignoreCase = true) ||
+            trimmed.contains(customer.phone.replace(" ", ""))
+        }
+
+        if (matchedCustomer != null || trimmed.startsWith("BYCE-MEMBER-", ignoreCase = true) || trimmed.startsWith("BYCE-CHECKIN-", ignoreCase = true) || trimmed.contains("MEM-", ignoreCase = true)) {
+            val cust = matchedCustomer ?: sampleCustomers.first()
+            val activeShift = when {
+                trimmed.contains("Evening", ignoreCase = true) -> "Evening Shift"
+                trimmed.contains("Night", ignoreCase = true) -> "Night Shift"
+                else -> "Morning Shift"
+            }
+
+            return ScannedQrResult(
+                rawPayload = trimmed,
+                type = ScannedQrType.MEMBER_CHECKIN,
+                title = cust.name,
+                subtitle = "ID: ${cust.id.uppercase()} · ${cust.membershipPlan}",
+                badgeText = if (cust.status == "Active") "✓ Active Member Pass" else "⚠️ Member ${cust.status}",
+                customerId = cust.id,
+                customerName = cust.name,
+                membershipPlan = cust.membershipPlan,
+                status = cust.status,
+                shift = activeShift,
+                time = "Today, Just now",
+                formatName = formatName,
+                isRecognizedGymEntity = true
+            )
+        }
+
+        // 5. Universal Barcode / URL / Plain Text Code
+        val isUrl = trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)
+        return ScannedQrResult(
+            rawPayload = trimmed,
+            type = ScannedQrType.UNIVERSAL_CODE,
+            title = if (isUrl) "Web Link / URL Code" else "Universal Barcode / Code",
+            subtitle = if (trimmed.length > 50) trimmed.take(47) + "..." else trimmed,
+            badgeText = "🌐 $formatName Scanned",
+            formatName = formatName,
+            isRecognizedGymEntity = false
+        )
+    }
+
+    fun confirmQrCheckIn(result: ScannedQrResult): AttendanceItem {
+        val name = result.customerName ?: "Member"
+        val custId = result.customerId ?: "c_${System.currentTimeMillis() % 1000}"
+        val plan = result.membershipPlan ?: "Standard Pass"
+        
+        val record = recordCheckIn(custId, name, plan)
+        
+        // Add alert notification
+        addNotification(
+            NotificationItem(
+                id = "notif_scan_${System.currentTimeMillis()}",
+                title = "QR Scanner Check-in",
+                message = "$name (${result.shift ?: "Shift"}) checked in successfully via Camera QR Scanner.",
+                type = "Attendance",
+                timestamp = "Just now",
+                isRead = false
+            )
+        )
+        logAdminAction("Kishore Kumar", "Scanner check-in recorded for $name ($plan)", "QR Scanner")
+        return record
+    }
 }

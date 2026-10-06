@@ -45,139 +45,284 @@ fun OwnerDashboardScreen(
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
-    val kpis = remember { GymOwnerRepository.getDashboardKpis() }
-    val membershipOverview = remember { GymOwnerRepository.getMembershipOverview() }
-    val todayOps = remember { GymOwnerRepository.getTodayOperations() }
-    val occupancy = remember { GymOwnerRepository.getGymOccupancy() }
-    val alerts = remember { GymOwnerRepository.getOperationalAlerts() }
+    var refreshTrigger by remember { mutableIntStateOf(0) }
+    var showQrScannerModal by remember { mutableStateOf(false) }
+
+    val kpis = remember(refreshTrigger) { GymOwnerRepository.getDashboardKpis() }
+    val membershipOverview = remember(refreshTrigger) { GymOwnerRepository.getMembershipOverview() }
+    val todayOps = remember(refreshTrigger) { GymOwnerRepository.getTodayOperations() }
+    val occupancy = remember(refreshTrigger) { GymOwnerRepository.getGymOccupancy() }
+    val alerts = remember(refreshTrigger) { GymOwnerRepository.getOperationalAlerts() }
     var selectedExpiryFilter by remember { mutableStateOf(15) }
-    val expiringMemberships = remember(selectedExpiryFilter) {
+    val expiringMemberships = remember(selectedExpiryFilter, refreshTrigger) {
         GymOwnerRepository.getExpiringMemberships(selectedExpiryFilter)
     }
-    val pendingPaymentsList = remember { GymOwnerRepository.getPendingPayments().take(3) }
+    val pendingPaymentsList = remember(refreshTrigger) { GymOwnerRepository.getPendingPayments().take(3) }
 
     var selectedRevenueFilter by remember { mutableStateOf("30 Days") }
-    val revenueData = remember(selectedRevenueFilter) {
+    val revenueData = remember(selectedRevenueFilter, refreshTrigger) {
         GymOwnerRepository.getRevenueChartData(selectedRevenueFilter)
     }
 
-    val recentCustomers = remember { GymOwnerRepository.getCustomers().take(4) }
-    val recentPayments = remember { GymOwnerRepository.getPayments().take(4) }
-    val upcomingBookings = remember { GymOwnerRepository.getBookings().take(3) }
+    val recentCustomers = remember(refreshTrigger) { GymOwnerRepository.getCustomers().take(4) }
+    val recentPayments = remember(refreshTrigger) { GymOwnerRepository.getPayments().take(4) }
+    val upcomingBookings = remember(refreshTrigger) { GymOwnerRepository.getBookings().take(3) }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(horizontal = 20.dp, vertical = 16.dp)
-    ) {
-        // ----------------------------------------------------
-        // WELCOME BANNER
-        // ----------------------------------------------------
-        LiquidGlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(22.dp)
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
+            // ----------------------------------------------------
+            // WELCOME BANNER
+            // ----------------------------------------------------
+            LiquidGlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = "WELCOME BACK",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = TextSubtle,
-                            letterSpacing = 1.sp
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Kishore Kumar",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextWhite
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0x20FFFFFF))
-                            .border(1.dp, GlassBorderLight, RoundedCornerShape(12.dp))
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Thu, 24 Sep 2026",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = TextWhite
-                        )
+                        Column {
+                            Text(
+                                text = "WELCOME BACK",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = TextSubtle,
+                                letterSpacing = 1.sp
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Kishore Kumar",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextWhite
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0x20FFFFFF))
+                                .border(1.dp, GlassBorderLight, RoundedCornerShape(12.dp))
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "Thu, 24 Sep 2026",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = TextWhite
+                            )
+                        }
                     }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Here is the summary of your gym's operational metrics, customer memberships, and revenue flow for today.",
+                        fontSize = 13.sp,
+                        color = TextMuted,
+                        lineHeight = 18.sp
+                    )
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "Here is the summary of your gym's operational metrics, customer memberships, and revenue flow for today.",
-                    fontSize = 13.sp,
-                    color = TextMuted,
-                    lineHeight = 18.sp
-                )
             }
-        }
 
-        // ----------------------------------------------------
-        // FEATURE 1: TODAY'S OPERATIONS
-        // ----------------------------------------------------
-        OwnerSectionHeader(
-            title = "Today's Operations",
-            actionLabel = "Live Attendance",
-            onActionClick = onNavigateToAttendance
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        LiquidGlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(22.dp)
-        ) {
-            Column(
+            // ----------------------------------------------------
+            // HERO: AI QR & BARCODE SCANNER (AUTO CAMERA OPEN)
+            // ----------------------------------------------------
+            LiquidGlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(18.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .clickable { showQrScannerModal = true },
+                shape = RoundedCornerShape(22.dp)
             ) {
-                Text(
-                    text = "TODAY'S OPERATIONS",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = TextSubtle,
-                    letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color(0x2810B981),
+                                    Color(0x180F172A),
+                                    Color(0x2238BDF8)
+                                )
+                            )
+                        )
+                        .border(
+                            1.dp,
+                            Brush.horizontalGradient(
+                                listOf(Color(0x9910B981), Color(0x4038BDF8))
+                            ),
+                            RoundedCornerShape(22.dp)
+                        )
+                        .padding(18.dp)
                 ) {
-                    TodayOpsMetricBox("Check-ins", todayOps.todayCheckins.toString(), Icons.Default.QrCodeScanner, Modifier.weight(1f))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    TodayOpsMetricBox("Bookings", todayOps.todayBookings.toString(), Icons.Default.EventAvailable, Modifier.weight(1f))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    TodayOpsMetricBox("Inside Now", todayOps.activeMembersInside.toString(), Icons.Default.DirectionsRun, Modifier.weight(1f))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(StatusActiveGreen)
+                                    .padding(2.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.QrCodeScanner,
+                                    contentDescription = "Scan QR",
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(14.dp))
+
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "AI QR SCANNER",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = StatusActiveGreen,
+                                        letterSpacing = 0.8.sp
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(Color(0x3510B981))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = "AUTO CAMERA",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = StatusActiveGreen
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Text(
+                                    text = "Scan Any QR / Barcode",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextWhite
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Tap to open camera · Detects Passes, Bookings, UPI & Barcodes",
+                                    fontSize = 11.sp,
+                                    color = TextMuted,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(Color(0x33FFFFFF))
+                                .border(1.dp, GlassBorderSpecular, CircleShape)
+                                .padding(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = "Open Camera",
+                                tint = TextWhite,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+            // ----------------------------------------------------
+            // FEATURE 1: TODAY'S OPERATIONS
+            // ----------------------------------------------------
+            OwnerSectionHeader(
+                title = "Today's Operations",
+                actionLabel = "Live Attendance",
+                onActionClick = onNavigateToAttendance
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LiquidGlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp)
                 ) {
-                    TodayOpsMetricBox("New Members", todayOps.newMembershipsToday.toString(), Icons.Default.PersonAddAlt1, Modifier.weight(1f))
+                    Text(
+                        text = "TODAY'S OPERATIONS",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = TextSubtle,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        TodayOpsMetricBox(
+                            label = "Check-ins",
+                            value = todayOps.todayCheckins.toString(),
+                            icon = Icons.Default.QrCodeScanner,
+                            modifier = Modifier.weight(1f),
+                            onClick = { showQrScannerModal = true }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        TodayOpsMetricBox(
+                            label = "Bookings",
+                            value = todayOps.todayBookings.toString(),
+                            icon = Icons.Default.EventAvailable,
+                            modifier = Modifier.weight(1f),
+                            onClick = onNavigateToBookings
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        TodayOpsMetricBox(
+                            label = "Inside Now",
+                            value = todayOps.activeMembersInside.toString(),
+                            icon = Icons.Default.DirectionsRun,
+                            modifier = Modifier.weight(1f),
+                            onClick = onNavigateToAttendance
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        TodayOpsMetricBox("New Members", todayOps.newMembershipsToday.toString(), Icons.Default.PersonAddAlt1, Modifier.weight(1f), onClick = onNavigateToCustomers)
                     Spacer(modifier = Modifier.width(8.dp))
                     TodayOpsMetricBox("Expiring Soon", todayOps.expiringSoonCount.toString(), Icons.Default.HourglassTop, Modifier.weight(1f))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -406,6 +551,12 @@ fun OwnerDashboardScreen(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             QuickActionButton(
+                label = "Scan QR",
+                icon = Icons.Default.QrCodeScanner,
+                onClick = { showQrScannerModal = true },
+                modifier = Modifier.weight(1f)
+            )
+            QuickActionButton(
                 label = "Add Customer",
                 icon = Icons.Default.PersonAdd,
                 onClick = onNavigateToCustomers,
@@ -421,12 +572,6 @@ fun OwnerDashboardScreen(
                 label = "Bookings",
                 icon = Icons.Default.CalendarToday,
                 onClick = onNavigateToBookings,
-                modifier = Modifier.weight(1f)
-            )
-            QuickActionButton(
-                label = "QR Pass",
-                icon = Icons.Default.QrCode2,
-                onClick = onNavigateToGym,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -889,8 +1034,58 @@ fun OwnerDashboardScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
     }
+
+    // ----------------------------------------------------
+    // FLOATING ACTION BUTTON: 1-TAP INSTANT CAMERA SCAN
+    // ----------------------------------------------------
+    Box(
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(bottom = 20.dp, end = 20.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(
+                Brush.horizontalGradient(
+                    colors = listOf(Color(0xFF10B981), Color(0xFF059669))
+                )
+            )
+            .border(1.5.dp, Color(0x60FFFFFF), RoundedCornerShape(22.dp))
+            .clickable { showQrScannerModal = true }
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.QrCodeScanner,
+                contentDescription = "Scan QR",
+                tint = Color.Black,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "Scan QR",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.Black
+            )
+        }
+    }
+}
+
+// ----------------------------------------------------
+// UNIVERSAL CAMERA QR & BARCODE SCANNER MODAL
+// ----------------------------------------------------
+if (showQrScannerModal) {
+    OwnerQrScannerModal(
+        onDismiss = { showQrScannerModal = false },
+        onScannedSuccessfully = {
+            refreshTrigger++
+        }
+    )
+}
 }
 
 @Composable
@@ -974,13 +1169,15 @@ private fun TodayOpsMetricBox(
     label: String,
     value: String,
     icon: ImageVector,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
             .background(Color(0x18FFFFFF))
             .border(1.dp, GlassBorderLight, RoundedCornerShape(14.dp))
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
             .padding(vertical = 12.dp, horizontal = 6.dp),
         contentAlignment = Alignment.Center
     ) {
