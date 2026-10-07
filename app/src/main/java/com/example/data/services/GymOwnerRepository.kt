@@ -486,6 +486,255 @@ object GymOwnerRepository {
         logAdminAction("Kishore Kumar", "Approved Membership freeze ($days days) from $startDate to $endDate for $planName", "Memberships")
     }
 
+    // ----------------------------------------------------
+    // 1. MANUAL ATTENDANCE OVERRIDE ENGINE
+    // ----------------------------------------------------
+    private val sampleOverrides = mutableListOf<AttendanceOverrideRecord>()
+
+    fun getAttendanceOverrides(): List<AttendanceOverrideRecord> = sampleOverrides
+
+    fun performAttendanceOverride(
+        customerId: String,
+        customerName: String,
+        plan: String,
+        reason: String,
+        staffName: String = "Kishore Kumar (Owner)"
+    ): Boolean {
+        recordCheckIn(
+            customerId = customerId,
+            name = customerName,
+            plan = plan
+        )
+        val bookingIdx = sampleBookings.indexOfFirst { it.customerName.equals(customerName, ignoreCase = true) || it.id == customerId }
+        if (bookingIdx != -1) {
+            sampleBookings[bookingIdx] = sampleBookings[bookingIdx].copy(arrivalStatus = "Attended", status = "Completed")
+        }
+        val record = AttendanceOverrideRecord(
+            id = "ovr_${System.currentTimeMillis()}",
+            customerId = customerId,
+            customerName = customerName,
+            membershipPlan = plan,
+            reason = reason,
+            overrideStaff = staffName,
+            originalStatus = "Hardware Bypass",
+            updatedStatus = "Attended",
+            timestamp = "Just now"
+        )
+        sampleOverrides.add(0, record)
+        logAdminAction(staffName, "Forced attendance override for $customerName ($plan). Reason: $reason", "Attendance")
+        addNotification(
+            NotificationItem(
+                id = "notif_ovr_${System.currentTimeMillis()}",
+                title = "Manual Override Check-In",
+                message = "Forced check-in status to 'Attended' for $customerName. Hardware bypass reason: $reason",
+                type = "Booking",
+                timestamp = "Just now",
+                isRead = false
+            )
+        )
+        return true
+    }
+
+    // ----------------------------------------------------
+    // 2. MEMBERSHIP DEFERMENT & AUTO-RECALCULATED FREEZES
+    // ----------------------------------------------------
+    fun deferMembership(membershipId: String, freezeDays: Int, reason: String, staffName: String = "Kishore Kumar"): Boolean {
+        val index = sampleMemberships.indexOfFirst { it.id == membershipId }
+        if (index != -1) {
+            val m = sampleMemberships[index]
+            val updatedEndDate = "${m.endDate} (+${freezeDays}d deferred)"
+            sampleMemberships[index] = m.copy(
+                status = "On Hold (Frozen)",
+                endDate = updatedEndDate
+            )
+            requestMembershipFreeze(
+                planName = m.planName,
+                startDate = "Today",
+                endDate = updatedEndDate,
+                days = freezeDays,
+                reason = reason
+            )
+            logAdminAction(staffName, "Placed membership for ${m.customerName} on hold ($freezeDays days deferred). Reason: $reason", "Memberships")
+            return true
+        }
+        return false
+    }
+
+    // ----------------------------------------------------
+    // 3 & 4. TRAINER & SESSION SCHEDULING + PROXY BROADCAST
+    // ----------------------------------------------------
+    private val sampleWorkoutSessions = mutableListOf(
+        GroupWorkoutSession("ws_1", "HRX High-Intensity Training", "HRX", "Coach Vicky", "In-House", "Studio 1 (Main Arena)", "06:30 AM - 07:20 AM", 50, 25, 22, "Extreme", "Scheduled"),
+        GroupWorkoutSession("ws_2", "Boxing Conditioning & Sparring", "Boxing", "Coach Ramesh", "In-House", "Studio 2 (Combat Zone)", "07:30 AM - 08:20 AM", 50, 20, 18, "High", "Scheduled"),
+        GroupWorkoutSession("ws_3", "Power Flow & Mobility Yoga", "Yoga", "Coach Priya", "Freelance Certified", "Studio 3 (Zen Studio)", "09:00 AM - 09:50 AM", 50, 20, 14, "Medium", "Scheduled"),
+        GroupWorkoutSession("ws_4", "Zumba Dance Cardio Party", "Dance", "Coach Anjali", "Freelance Certified", "Studio 1 (Main Arena)", "05:30 PM - 06:20 PM", 50, 30, 28, "High", "Scheduled"),
+        GroupWorkoutSession("ws_5", "S&C Compound Strength", "Strength", "Coach Sanjay", "In-House", "Strength Floor Zone A", "07:00 PM - 07:50 PM", 50, 18, 16, "Extreme", "Scheduled")
+    )
+
+    private val sampleProxyBroadcasts = mutableListOf<ProxyTrainerBroadcast>()
+
+    fun getWorkoutSessions(): List<GroupWorkoutSession> = sampleWorkoutSessions
+
+    fun getProxyBroadcasts(): List<ProxyTrainerBroadcast> = sampleProxyBroadcasts
+
+    fun broadcastProxyTrainerSearch(sessionId: String): Boolean {
+        val index = sampleWorkoutSessions.indexOfFirst { it.id == sessionId }
+        if (index != -1) {
+            val s = sampleWorkoutSessions[index]
+            sampleWorkoutSessions[index] = s.copy(
+                proxyBroadcastActive = true,
+                status = "Proxy Search Active"
+            )
+            val broadcast = ProxyTrainerBroadcast(
+                id = "bc_${System.currentTimeMillis()}",
+                sessionId = s.id,
+                sessionTitle = s.title,
+                originalCoach = s.coachName,
+                timeSlot = s.timeSlot,
+                notifiedTrainersCount = 14,
+                status = "Broadcast Active"
+            )
+            sampleProxyBroadcasts.add(0, broadcast)
+            logAdminAction("Emergency Dispatcher", "Broadcasted emergency substitute request for '${s.title}' at ${s.timeSlot} to 14 local certified trainers.", "Staff")
+            addNotification(
+                NotificationItem(
+                    id = "notif_bc_${System.currentTimeMillis()}",
+                    title = "Proxy Trainer Broadcast Sent",
+                    message = "Emergency substitute opportunity broadcasted for '${s.title}' (${s.timeSlot}). 14 trainers notified.",
+                    type = "System",
+                    timestamp = "Just now",
+                    isRead = false
+                )
+            )
+            return true
+        }
+        return false
+    }
+
+    fun assignProxyTrainer(sessionId: String, substituteCoach: String): Boolean {
+        val index = sampleWorkoutSessions.indexOfFirst { it.id == sessionId }
+        if (index != -1) {
+            val s = sampleWorkoutSessions[index]
+            sampleWorkoutSessions[index] = s.copy(
+                coachName = substituteCoach,
+                proxyBroadcastActive = false,
+                status = "Substitute Assigned",
+                assignedProxyCoach = substituteCoach
+            )
+            logAdminAction("Kishore Kumar", "Confirmed substitute trainer '$substituteCoach' for session '${s.title}'", "Staff")
+            return true
+        }
+        return false
+    }
+
+    // ----------------------------------------------------
+    // 5. TRIAL CHECK-IN AUDIO BUZZER ALERT
+    // ----------------------------------------------------
+    private var activeTrialAlert: TrialCheckInBuzzerAlert? = TrialCheckInBuzzerAlert(
+        id = "alert_trial_01",
+        memberName = "Sneha Joseph (First-Timer)",
+        phone = "+91 96331 66778",
+        sessionType = "Boxing & Cardio Kick",
+        trialPassType = "2-Session Free Trial",
+        centerName = "Iron House Fitness",
+        arrivalTime = "Just now (Turnstile #1)",
+        isFirstTimeTrialist = true,
+        isAudioAlertPlaying = true,
+        isAcknowledged = false
+    )
+
+    fun getActiveTrialBuzzer(): TrialCheckInBuzzerAlert? = activeTrialAlert
+
+    fun triggerTrialBuzzer(alert: TrialCheckInBuzzerAlert) {
+        activeTrialAlert = alert
+    }
+
+    fun acknowledgeTrialAlert(alertId: String, greeterStaff: String = "Staff Sanjay") {
+        val alert = activeTrialAlert
+        if (alert != null && alert.id == alertId) {
+            activeTrialAlert = alert.copy(
+                isAudioAlertPlaying = false,
+                isAcknowledged = true,
+                assignedGreeter = greeterStaff
+            )
+            logAdminAction(greeterStaff, "Acknowledged first-time trial check-in buzzer for ${alert.memberName}. Assigned 5-min facility tour.", "Attendance")
+        }
+    }
+
+    fun dismissTrialBuzzer() {
+        activeTrialAlert = null
+    }
+
+    // ----------------------------------------------------
+    // 6. IOT MACHINERY TELEMETRY SYNC
+    // ----------------------------------------------------
+    private val sampleIoTTelemetry = mutableListOf(
+        SmartEquipmentTelemetry("iot_1", "Technogym Skillrun Pro #01", "Treadmill", "TG-RUN-9842", "Optimal", 14820.5, 8.4, 240, 18, "In 45 Days"),
+        SmartEquipmentTelemetry("iot_2", "Technogym Skillrun Pro #02", "Treadmill", "TG-RUN-9843", "Heavy Load", 19450.2, 11.2, 280, 72, "In 8 Days"),
+        SmartEquipmentTelemetry("iot_3", "LifeFitness Dual Cable Tower #01", "Cable Machine", "LF-CBL-4421", "Optimal", 0.0, 9.6, 0, 24, "In 60 Days"),
+        SmartEquipmentTelemetry("iot_4", "Matrix Rower Matrix CXP #01", "Rower", "MX-ROW-1102", "Optimal", 4520.0, 5.1, 140, 12, "In 90 Days"),
+        SmartEquipmentTelemetry("iot_5", "Precor Commercial Elliptical #03", "Elliptical", "PC-ELP-7714", "Service Due", 22100.0, 12.8, 220, 88, "Immediate Action")
+    )
+
+    fun getIoTTelemetry(): List<SmartEquipmentTelemetry> = sampleIoTTelemetry
+
+    // ----------------------------------------------------
+    // 8. POINT OF SALE (POS) & BILLING TRANSACTIONS
+    // ----------------------------------------------------
+    private val samplePosInvoices = mutableListOf(
+        PosInvoiceItem("inv_1", "POS-2026-0891", "Rahul Menon", "+91 98471 22334", "Membership Renewal", "All-Access Elite (Annual)", 14999.0, 2699.82, 17698.82, "Razorpay POS Terminal", "Kishore Kumar", "Paid", "Today, 11:20 AM"),
+        PosInvoiceItem("inv_2", "POS-2026-0890", "Deepak Varma", "+91 94471 55667", "On-Site Upgrade", "Upgrade to Standard Pro (3-Mo)", 3299.0, 593.82, 3892.82, "Dynamic UPI QR", "Staff Kavya", "Paid", "Today, 10:45 AM"),
+        PosInvoiceItem("inv_3", "POS-2026-0889", "Ananya Nair", "+91 97455 33445", "Merch Purchase", "BYCE High-Performance Gym Kit", 1299.0, 233.82, 1532.82, "Card Swipe", "Kishore Kumar", "Paid", "Yesterday, 06:15 PM"),
+        PosInvoiceItem("inv_4", "POS-2026-0888", "Rohan Pillai", "+91 94470 11223", "Billing Refund", "Unused Session Package Refund", -1499.0, -269.82, -1768.82, "Original Payment Mode", "Kishore Kumar", "Refunded", "24 Sep 2026")
+    )
+
+    fun getPosInvoices(): List<PosInvoiceItem> = samplePosInvoices
+
+    fun createPosInvoice(
+        customerName: String,
+        customerPhone: String,
+        type: String,
+        itemName: String,
+        amount: Double,
+        paymentMode: String
+    ): PosInvoiceItem {
+        val gst = amount * 0.18
+        val total = amount + gst
+        val inv = PosInvoiceItem(
+            id = "inv_${System.currentTimeMillis()}",
+            invoiceNumber = "POS-2026-${(1000..9999).random()}",
+            customerName = customerName,
+            customerPhone = customerPhone,
+            transactionType = type,
+            itemName = itemName,
+            baseAmount = amount,
+            gstTax = gst,
+            totalAmount = total,
+            paymentMode = paymentMode,
+            billingStaff = "Kishore Kumar",
+            status = "Paid",
+            timestamp = "Just now"
+        )
+        samplePosInvoices.add(0, inv)
+        samplePayments.add(
+            0,
+            PaymentItem(
+                transactionId = inv.invoiceNumber,
+                customerName = customerName,
+                planName = itemName,
+                amount = total,
+                provider = paymentMode,
+                status = "Successful",
+                date = "Today",
+                orderId = inv.id,
+                paymentId = "POS_APP",
+                paidAt = "Just now"
+            )
+        )
+        logAdminAction("Kishore Kumar", "Generated POS Invoice ${inv.invoiceNumber} for $customerName: ₹${total.toInt()} via $paymentMode", "Payments")
+        return inv
+    }
+
     // GET /api/v1/admin/payments/
     fun getPayments(): List<PaymentItem> = samplePayments
 

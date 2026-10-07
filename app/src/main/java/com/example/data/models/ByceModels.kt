@@ -413,3 +413,107 @@ data class ScannedQrResult(
     val isRecognizedGymEntity: Boolean = true,
     val timestamp: String = "Just now"
 )
+
+/**
+ * 1. Manual Attendance Override Record
+ */
+data class AttendanceOverrideRecord(
+    val id: String,
+    val customerId: String,
+    val customerName: String,
+    val membershipPlan: String,
+    val reason: String, // Turnstile Hardware Failure, Tablet Malfunction, VIP Manual Entry
+    val overrideStaff: String = "Kishore Kumar (Owner)",
+    val originalStatus: String = "Not Arrived",
+    val updatedStatus: String = "Attended",
+    val timestamp: String = "Just now"
+)
+
+/**
+ * 3. Trainer & Group Workout Session Scheduling
+ */
+data class GroupWorkoutSession(
+    val id: String,
+    val title: String, // HRX Training, Power Yoga, Boxing Conditioning, Zumba Dance, Strength & HIIT
+    val category: String, // HRX, Yoga, Boxing, Strength, Dance
+    val coachName: String,
+    val coachType: String = "In-House", // In-House, Freelance Certified
+    val roomName: String = "Studio 1 (Main Arena)",
+    val timeSlot: String,
+    val durationMins: Int = 50,
+    val capacity: Int = 25,
+    val bookedCount: Int = 18,
+    val intensity: String = "High",
+    val status: String = "Scheduled", // Scheduled, In Progress, Substitute Assigned, Completed
+    val proxyBroadcastActive: Boolean = false,
+    val assignedProxyCoach: String? = null
+)
+
+/**
+ * 4. Automated Proxy Trainer Search Broadcast
+ */
+data class ProxyTrainerBroadcast(
+    val id: String,
+    val sessionId: String,
+    val sessionTitle: String,
+    val originalCoach: String,
+    val timeSlot: String,
+    val broadcastTime: String = "Just now",
+    val radiusKm: Int = 15,
+    val notifiedTrainersCount: Int = 14,
+    val acceptedTrainers: List<String> = listOf("Coach Vicky (Certified HRX)", "Coach Anjali (Zumba Specialist)"),
+    val status: String = "Broadcast Active" // Broadcast Active, Substitute Confirmed, Closed
+)
+
+/**
+ * 5. Full-Screen Incoming-Call Style Trial Buzzer Alert
+ */
+data class TrialCheckInBuzzerAlert(
+    val id: String,
+    val memberName: String,
+    val phone: String,
+    val sessionType: String,
+    val trialPassType: String = "2-Session Free Trial",
+    val centerName: String = "Iron House Fitness",
+    val arrivalTime: String = "Just now",
+    val isFirstTimeTrialist: Boolean = true,
+    val isAudioAlertPlaying: Boolean = true,
+    val assignedGreeter: String? = null,
+    val isAcknowledged: Boolean = false
+)
+
+/**
+ * 6. IoT Hardware & Machinery Telemetry
+ */
+data class SmartEquipmentTelemetry(
+    val id: String,
+    val machineName: String, // Technogym Run Pro #04, LifeFitness Cable Tower #02, Matrix Rower #01, Precor Elliptical #03
+    val machineCategory: String, // Treadmill, Cable Machine, Rower, Elliptical, Smart Bike
+    val serialNumber: String,
+    val operationalStatus: String = "Optimal", // Optimal, Service Due, Heavy Load, Warning
+    val totalKmRun: Double,
+    val dailyMotorHours: Double,
+    val currentRpm: Int,
+    val wearPercentage: Int, // 0 - 100%
+    val nextServiceDue: String,
+    val lastTelemetrySync: String = "Real-time live sync"
+)
+
+/**
+ * 8. Point of Sale (POS) & Billing Invoice
+ */
+data class PosInvoiceItem(
+    val id: String,
+    val invoiceNumber: String,
+    val customerName: String,
+    val customerPhone: String,
+    val transactionType: String, // On-Site Upgrade, Membership Renewal, Merch Purchase, Billing Refund
+    val itemName: String,
+    val baseAmount: Double,
+    val gstTax: Double,
+    val totalAmount: Double,
+    val paymentMode: String, // Razorpay POS, Dynamic UPI QR, Card Swipe, Cash
+    val billingStaff: String = "Kishore Kumar",
+    val status: String = "Paid", // Paid, Refunded, Pending
+    val timestamp: String = "Just now"
+)

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.data.models.PaymentItem
+import com.example.data.models.PosInvoiceItem
 import com.example.data.services.GymOwnerRepository
 import com.example.ui.components.*
 import com.example.ui.theme.*
@@ -33,6 +34,7 @@ import com.example.ui.theme.*
 fun OwnerPaymentsScreen(
     modifier: Modifier = Modifier
 ) {
+    var selectedSection by remember { mutableStateOf("Online") } // "Online", "Pending", "POS"
     var searchQuery by remember { mutableStateOf("") }
     var selectedStatusFilter by remember { mutableStateOf("All") }
     var refreshTrigger by remember { mutableIntStateOf(0) }
@@ -40,9 +42,12 @@ fun OwnerPaymentsScreen(
     var exportFormat by remember { mutableStateOf("CSV") }
     var paymentToRecordPaid by remember { mutableStateOf<com.example.data.models.PendingPaymentItem?>(null) }
     var reminderToastMessage by remember { mutableStateOf<String?>(null) }
+    var showNewPosModal by remember { mutableStateOf(false) }
+    var selectedPosInvoiceForDetail by remember { mutableStateOf<PosInvoiceItem?>(null) }
 
     val allPayments = remember { GymOwnerRepository.getPayments() }
     val allPendingPayments = remember(refreshTrigger) { GymOwnerRepository.getPendingPayments() }
+    val allPosInvoices = remember(refreshTrigger) { GymOwnerRepository.getPosInvoices() }
     var selectedPaymentForDetail by remember { mutableStateOf<PaymentItem?>(null) }
 
     val filteredPayments = remember(searchQuery, selectedStatusFilter, allPayments) {
@@ -60,6 +65,15 @@ fun OwnerPaymentsScreen(
             pending.customerName.contains(searchQuery, ignoreCase = true) ||
                     pending.membershipPlan.contains(searchQuery, ignoreCase = true) ||
                     pending.phoneNumber.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
+    val filteredPosInvoices = remember(searchQuery, allPosInvoices) {
+        allPosInvoices.filter { inv ->
+            inv.customerName.contains(searchQuery, ignoreCase = true) ||
+                    inv.invoiceNumber.contains(searchQuery, ignoreCase = true) ||
+                    inv.itemName.contains(searchQuery, ignoreCase = true) ||
+                    inv.transactionType.contains(searchQuery, ignoreCase = true)
         }
     }
 
@@ -82,38 +96,106 @@ fun OwnerPaymentsScreen(
                 ) {
                     Column {
                         Text(
-                            text = "FINANCIAL LEDGER",
+                            text = "FINANCIAL & BILLING LEDGER",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = TextSubtle,
                             letterSpacing = 1.sp
                         )
                         Text(
-                            text = "Payments & Transactions",
+                            text = "Payments & POS Desk",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextWhite
                         )
                     }
 
-                    // Export Button
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color(0x20FFFFFF))
-                            .clickable { showExportDialog = true }
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.FileDownload, contentDescription = "Export", tint = TextWhite, modifier = Modifier.size(15.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "Export", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextWhite)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (selectedSection == "POS") {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            colors = listOf(Color(0xFF6B9330), Color(0xFF4E7320))
+                                        )
+                                    )
+                                    .clickable { showNewPosModal = true }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.AddShoppingCart, contentDescription = null, tint = TextWhite, modifier = Modifier.size(15.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(text = "New POS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                                }
+                            }
+                        }
+
+                        // Export Button
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color(0x20FFFFFF))
+                                .clickable { showExportDialog = true }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.FileDownload, contentDescription = "Export", tint = TextWhite, modifier = Modifier.size(15.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = "Export", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextWhite)
+                            }
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
+
+                // Section Tabs: Online | Pending Dues | Point of Sale (POS)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0x18FFFFFF))
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    listOf(
+                        Triple("Online", "Online Ledger", Icons.Default.CreditCard),
+                        Triple("Pending", "Pending Dues (${allPendingPayments.size})", Icons.Default.PendingActions),
+                        Triple("POS", "On-Site POS Desk", Icons.Default.PointOfSale)
+                    ).forEach { (secKey, title, icon) ->
+                        val isSelected = selectedSection == secKey
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSelected) Color(0x35FFFFFF) else Color.Transparent)
+                                .clickable { selectedSection = secKey }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = if (isSelected) TextWhite else TextMuted,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = title,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) TextWhite else TextMuted
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Top summary cards (2x2)
                 Row(
@@ -129,10 +211,10 @@ fun OwnerPaymentsScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     MiniPaymentKpi("Successful", "942", TextWhite, Modifier.weight(1f))
-                    MiniPaymentKpi("Failed", "6", StatusExpiredRed, Modifier.weight(1f))
+                    MiniPaymentKpi("On-Site POS Invoices", "${allPosInvoices.size} Generated", StatusInfoBlue, Modifier.weight(1f))
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 reminderToastMessage?.let { msg ->
                     Box(
@@ -156,21 +238,32 @@ fun OwnerPaymentsScreen(
                     Spacer(modifier = Modifier.height(10.dp))
                 }
 
-                OwnerSearchBar(
-                    query = searchQuery,
-                    onQueryChange = { searchQuery = it },
-                    placeholder = "Search transaction, member, phone...",
-                    filterOptions = listOf("All", "Pending / Dues", "Successful", "Failed"),
-                    selectedFilter = selectedStatusFilter,
-                    onFilterSelected = { selectedStatusFilter = it }
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                val countText = if (selectedStatusFilter == "Pending / Dues") {
-                    "Showing ${filteredPendingPayments.size} pending dues"
+                if (selectedSection != "POS") {
+                    OwnerSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        placeholder = "Search transaction, member, phone...",
+                        filterOptions = listOf("All", "Successful", "Failed"),
+                        selectedFilter = selectedStatusFilter,
+                        onFilterSelected = { selectedStatusFilter = it }
+                    )
                 } else {
-                    "Showing ${filteredPayments.size} transactions"
+                    OwnerSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        placeholder = "Search POS invoice #, member, or upgrade...",
+                        filterOptions = listOf("All"),
+                        selectedFilter = "All",
+                        onFilterSelected = {}
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                val countText = when (selectedSection) {
+                    "Pending" -> "Showing ${filteredPendingPayments.size} pending dues"
+                    "POS" -> "Showing ${filteredPosInvoices.size} on-site POS invoices"
+                    else -> "Showing ${filteredPayments.size} online transactions"
                 }
                 Text(
                     text = countText,
@@ -181,7 +274,8 @@ fun OwnerPaymentsScreen(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            if (selectedStatusFilter == "Pending / Dues") {
+            // Section 1: Pending Dues
+            if (selectedSection == "Pending") {
                 if (filteredPendingPayments.isEmpty()) {
                     item {
                         OwnerEmptyState(
@@ -203,7 +297,27 @@ fun OwnerPaymentsScreen(
                         )
                     }
                 }
-            } else {
+            } 
+            // Section 2: POS Invoices & Billing
+            else if (selectedSection == "POS") {
+                if (filteredPosInvoices.isEmpty()) {
+                    item {
+                        OwnerEmptyState(
+                            title = "No POS Invoices",
+                            description = "Click '+ New POS' to issue on-site membership upgrades, renewals, merchandise sales, or refunds."
+                        )
+                    }
+                } else {
+                    items(filteredPosInvoices, key = { it.id }) { inv ->
+                        PosInvoiceCardRow(
+                            invoice = inv,
+                            onViewClick = { selectedPosInvoiceForDetail = inv }
+                        )
+                    }
+                }
+            }
+            // Section 3: Online Ledger
+            else {
                 if (filteredPayments.isEmpty()) {
                     item {
                         OwnerEmptyState(
@@ -233,6 +347,13 @@ fun OwnerPaymentsScreen(
             )
         }
 
+        selectedPosInvoiceForDetail?.let { inv ->
+            PosInvoiceReceiptModal(
+                invoice = inv,
+                onDismiss = { selectedPosInvoiceForDetail = null }
+            )
+        }
+
         paymentToRecordPaid?.let { item ->
             RecordPaymentConfirmDialog(
                 item = item,
@@ -246,6 +367,18 @@ fun OwnerPaymentsScreen(
             )
         }
 
+        if (showNewPosModal) {
+            NewPosInvoiceModal(
+                onDismiss = { showNewPosModal = false },
+                onCreateInvoice = { name, phone, type, itemDesc, baseAmt, mode ->
+                    GymOwnerRepository.createPosInvoice(name, phone, type, itemDesc, baseAmt, mode)
+                    refreshTrigger++
+                    showNewPosModal = false
+                    reminderToastMessage = "✓ Created POS Tax Invoice for $name (₹${(baseAmt * 1.18).toInt()})."
+                }
+            )
+        }
+
         if (showExportDialog) {
             ExportModalDialog(
                 moduleName = "Payments & Transactions",
@@ -253,6 +386,274 @@ fun OwnerPaymentsScreen(
                 onFormatChange = { exportFormat = it },
                 onDismiss = { showExportDialog = false }
             )
+        }
+    }
+}
+
+@Composable
+private fun PosInvoiceCardRow(
+    invoice: PosInvoiceItem,
+    onViewClick: () -> Unit
+) {
+    val isRefund = invoice.baseAmount < 0 || invoice.transactionType.contains("Refund", ignoreCase = true)
+
+    LiquidGlassCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onViewClick() },
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(if (isRefund) Color(0x35EF4444) else Color(0x3538BDF8)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (isRefund) Icons.Default.Replay else Icons.Default.PointOfSale,
+                            contentDescription = null,
+                            tint = if (isRefund) StatusExpiredRed else StatusInfoBlue,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(text = invoice.customerName, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                        Text(text = "${invoice.invoiceNumber} · ${invoice.transactionType}", fontSize = 11.sp, color = ByceCoolGray)
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "₹${invoice.totalAmount.toInt()}",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (isRefund) StatusExpiredRed else TextWhite
+                    )
+                    Text(text = invoice.paymentMode, fontSize = 10.sp, color = TextMuted)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x15FFFFFF)))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = invoice.itemName, fontSize = 12.sp, color = TextWhite, fontWeight = FontWeight.Medium)
+                OwnerStatusBadge(status = invoice.status)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NewPosInvoiceModal(
+    onDismiss: () -> Unit,
+    onCreateInvoice: (name: String, phone: String, type: String, itemName: String, baseAmount: Double, paymentMode: String) -> Unit
+) {
+    var customerName by remember { mutableStateOf("") }
+    var customerPhone by remember { mutableStateOf("") }
+    var transactionType by remember { mutableStateOf("On-Site Upgrade") }
+    var itemName by remember { mutableStateOf("Upgrade to All-Access Elite (Annual)") }
+    var baseAmountStr by remember { mutableStateOf("14999") }
+    var paymentMode by remember { mutableStateOf("Razorpay POS Terminal") }
+
+    val baseAmount = baseAmountStr.toDoubleOrNull() ?: 0.0
+    val gstAmount = baseAmount * 0.18
+    val totalAmount = baseAmount + gstAmount
+
+    OwnerModalDialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Point of Sale (POS) Billing", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            LiquidGlassTextField(value = customerName, onValueChange = { customerName = it }, label = "Customer Name", placeholder = "e.g. Rahul Menon")
+            Spacer(modifier = Modifier.height(8.dp))
+            LiquidGlassTextField(value = customerPhone, onValueChange = { customerPhone = it }, label = "Phone Number", placeholder = "+91 98471 22334")
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(text = "Transaction Type", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
+            Spacer(modifier = Modifier.height(6.dp))
+
+            listOf("Membership Renewal", "On-Site Upgrade", "Merch Purchase", "Billing Refund").forEach { type ->
+                val isSelected = transactionType == type
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (isSelected) Color(0x25FFFFFF) else Color(0x0AFFFFFF))
+                        .clickable { transactionType = type }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = { transactionType = type },
+                        colors = RadioButtonDefaults.colors(selectedColor = StatusInfoBlue, unselectedColor = TextMuted)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(text = type, fontSize = 12.sp, color = TextWhite)
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            LiquidGlassTextField(value = itemName, onValueChange = { itemName = it }, label = "Item / Plan Description", placeholder = "e.g. All-Access Elite Annual")
+            Spacer(modifier = Modifier.height(8.dp))
+            LiquidGlassTextField(value = baseAmountStr, onValueChange = { baseAmountStr = it }, label = "Base Amount (₹)", placeholder = "14999")
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(text = "Payment Mode", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf("Razorpay POS", "Dynamic UPI", "Card", "Cash").forEach { mode ->
+                    val isSelected = paymentMode.contains(mode)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isSelected) Color(0x3538BDF8) else Color(0x15FFFFFF))
+                            .clickable { paymentMode = mode }
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = mode, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isSelected) StatusInfoBlue else TextWhite)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // GST Breakdown Card
+            LiquidGlassCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+                    ReceiptRow("Base Amount", "₹${baseAmount.toInt()}")
+                    ReceiptRow("GST (18% SGST+CGST)", "₹${gstAmount.toInt()}")
+                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x15FFFFFF)).padding(vertical = 2.dp))
+                    ReceiptRow("Total Billable", "₹${totalAmount.toInt()}")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color(0xFF6B9330), Color(0xFF4E7320))
+                        )
+                    )
+                    .clickable {
+                        if (customerName.isNotBlank() && baseAmount > 0) {
+                            onCreateInvoice(customerName, customerPhone, transactionType, itemName, baseAmount, paymentMode)
+                        }
+                    }
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "Generate Tax Invoice & Charge", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PosInvoiceReceiptModal(
+    invoice: PosInvoiceItem,
+    onDismiss: () -> Unit
+) {
+    OwnerModalDialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Tax Invoice Receipt", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(text = "₹${invoice.totalAmount.toInt()}", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextWhite)
+            Text(text = "Invoice Number: ${invoice.invoiceNumber}", fontSize = 12.sp, color = ByceCoolGray)
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x20FFFFFF)))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            ReceiptRow("Customer", invoice.customerName)
+            ReceiptRow("Phone", invoice.customerPhone)
+            ReceiptRow("Transaction", invoice.transactionType)
+            ReceiptRow("Item", invoice.itemName)
+            ReceiptRow("Base Amount", "₹${invoice.baseAmount.toInt()}")
+            ReceiptRow("GST Tax (18%)", "₹${invoice.gstTax.toInt()}")
+            ReceiptRow("Payment Mode", invoice.paymentMode)
+            ReceiptRow("Staff", invoice.billingStaff)
+            ReceiptRow("Timestamp", invoice.timestamp)
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Status", fontSize = 13.sp, color = TextMuted)
+                OwnerStatusBadge(status = invoice.status)
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0x25FFFFFF))
+                    .clickable { onDismiss() }
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "Close Receipt", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+            }
         }
     }
 }

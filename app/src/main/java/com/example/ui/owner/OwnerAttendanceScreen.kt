@@ -22,7 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.data.models.AttendanceItem
+import com.example.data.models.*
 import com.example.data.services.GymOwnerRepository
 import com.example.ui.components.*
 import com.example.ui.theme.*
@@ -37,9 +37,11 @@ fun OwnerAttendanceScreen(
     var searchQuery by remember { mutableStateOf("") }
     var refreshTrigger by remember { mutableIntStateOf(0) }
     var showManualCheckInDialog by remember { mutableStateOf(false) }
+    var showManualOverrideDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var exportFormat by remember { mutableStateOf("CSV") }
     var showCameraScannerModal by remember { mutableStateOf(false) }
+    val activeTrialAlert = GymOwnerRepository.getActiveTrialBuzzer()
 
     // Modal dialog states for the 4 KPI cards
     var showTodayCheckinsModal by remember { mutableStateOf(false) }
@@ -93,18 +95,34 @@ fun OwnerAttendanceScreen(
                     )
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // Manual Override Button (Hardware Bypass)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(StatusExpiredRedBg)
+                            .clickable { showManualOverrideDialog = true }
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Build, contentDescription = "Override", tint = StatusExpiredRed, modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = "Override", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = StatusExpiredRed)
+                        }
+                    }
+
                     // Camera Scan QR Button
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
                             .background(StatusActiveGreen)
                             .clickable { showCameraScannerModal = true }
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR", tint = Color.Black, modifier = Modifier.size(15.dp))
+                            Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR", tint = Color.Black, modifier = Modifier.size(13.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(text = "Scan", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                         }
@@ -116,11 +134,11 @@ fun OwnerAttendanceScreen(
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color(0x20FFFFFF))
                             .clickable { showExportDialog = true }
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.FileDownload, contentDescription = "Export", tint = TextWhite, modifier = Modifier.size(15.dp))
+                            Icon(Icons.Default.FileDownload, contentDescription = "Export", tint = TextWhite, modifier = Modifier.size(13.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(text = "Export", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextWhite)
                         }
@@ -132,11 +150,11 @@ fun OwnerAttendanceScreen(
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color(0x35FFFFFF))
                             .clickable { showManualCheckInDialog = true }
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.PersonAdd, contentDescription = "Check-in", tint = TextWhite, modifier = Modifier.size(15.dp))
+                            Icon(Icons.Default.PersonAdd, contentDescription = "Check-in", tint = TextWhite, modifier = Modifier.size(13.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(text = "Check-in", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextWhite)
                         }
@@ -319,6 +337,7 @@ fun OwnerAttendanceScreen(
         }
 
         // Manual Check-in Dialog
+        // Manual Check-in Dialog
         if (showManualCheckInDialog) {
             ManualCheckInDialog(
                 onDismiss = { showManualCheckInDialog = false },
@@ -328,6 +347,40 @@ fun OwnerAttendanceScreen(
                     showManualCheckInDialog = false
                 }
             )
+        }
+
+        // 1. Manual Attendance Override Dialog (Hardware Failure Bypass)
+        if (showManualOverrideDialog) {
+            ManualAttendanceOverrideDialog(
+                onDismiss = { showManualOverrideDialog = false },
+                onConfirmOverride = { customerId, customerName, plan, reason ->
+                    GymOwnerRepository.performAttendanceOverride(
+                        customerId = customerId,
+                        customerName = customerName,
+                        plan = plan,
+                        reason = reason
+                    )
+                    refreshTrigger++
+                    showManualOverrideDialog = false
+                }
+            )
+        }
+
+        // 5. Full-Screen Incoming-Call Style Trial Buzzer Alert
+        activeTrialAlert?.let { alert ->
+            if (!alert.isAcknowledged) {
+                TrialCheckInBuzzerDialog(
+                    alert = alert,
+                    onAcknowledge = {
+                        GymOwnerRepository.acknowledgeTrialAlert(alert.id, "Staff Kishore")
+                        refreshTrigger++
+                    },
+                    onDismiss = {
+                        GymOwnerRepository.dismissTrialBuzzer()
+                        refreshTrigger++
+                    }
+                )
+            }
         }
 
         // Export Dialog
@@ -1471,6 +1524,294 @@ fun ExportModalDialog(
                 contentAlignment = Alignment.Center
             ) {
                 Text(text = "Download $selectedFormat", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 1. MANUAL ATTENDANCE OVERRIDE DIALOG (HARDWARE FAILURE BYPASS)
+// ---------------------------------------------------------------------------
+@Composable
+private fun ManualAttendanceOverrideDialog(
+    onDismiss: () -> Unit,
+    onConfirmOverride: (String, String, String, String) -> Unit
+) {
+    var memberName by remember { mutableStateOf("Rahul Menon") }
+    var selectedPlan by remember { mutableStateOf("All-Access Elite") }
+    var overrideReason by remember { mutableStateOf("Turnstile Hardware Failure") }
+
+    OwnerModalDialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(22.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Build, contentDescription = null, tint = StatusExpiredRed, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = "MANUAL OVERRIDE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = StatusExpiredRed, letterSpacing = 1.sp)
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(text = "Force Attendance to 'Attended'", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = "Force check-in status directly in the central database to bypass turnstile, NFC, or tablet camera breakdowns.",
+                fontSize = 11.sp,
+                color = ByceCoolGray
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            LiquidGlassTextField(
+                value = memberName,
+                onValueChange = { memberName = it },
+                label = "Customer / Member Name",
+                placeholder = "e.g. Rahul Menon"
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(text = "Membership Tier", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextMuted)
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf("All-Access Elite", "Standard Pro", "Single-Center").forEach { pl ->
+                    val isSelected = selectedPlan == pl
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isSelected) Color(0x35FFFFFF) else Color(0x15FFFFFF))
+                            .clickable { selectedPlan = pl }
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = pl, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isSelected) TextWhite else TextMuted)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(text = "Override Reason / Constraint", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextMuted)
+            Spacer(modifier = Modifier.height(4.dp))
+
+            listOf(
+                "Turnstile Hardware Breakdown",
+                "Tablet Camera / Scanner Failure",
+                "NFC Card Reader Timeout",
+                "VIP / Guest Manual Override"
+            ).forEach { reason ->
+                val isSelected = overrideReason == reason
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (isSelected) Color(0x28FFFFFF) else Color.Transparent)
+                        .clickable { overrideReason = reason }
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = { overrideReason = reason },
+                        colors = RadioButtonDefaults.colors(selectedColor = StatusExpiredRed)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(text = reason, fontSize = 12.sp, color = TextWhite)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(Color(0xFFD32F2F), Color(0xFFB71C1C))
+                        )
+                    )
+                    .clickable {
+                        onConfirmOverride("mem_${System.currentTimeMillis()}", memberName, selectedPlan, overrideReason)
+                    }
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Check, contentDescription = null, tint = TextWhite, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(text = "Force Override to 'Attended'", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 5. FULL-SCREEN INCOMING-CALL STYLE TRIAL BUZZER ALERT
+// ---------------------------------------------------------------------------
+@Composable
+private fun TrialCheckInBuzzerDialog(
+    alert: TrialCheckInBuzzerAlert,
+    onAcknowledge: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    OwnerModalDialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color(0xFF1E1012), Color(0xFF161415), Color(0xFF111714))
+                    )
+                )
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Urgent Siren Visual Pulse Rings
+            Box(
+                modifier = Modifier
+                    .size(84.dp)
+                    .clip(CircleShape)
+                    .background(Color(0x35FF5252)),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(StatusExpiredRed),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.NotificationsActive,
+                        contentDescription = "Buzzer",
+                        tint = TextWhite,
+                        modifier = Modifier.size(34.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Audio Alert Headline
+            Text(
+                text = "⚡ FIRST-TIME TRIALIST CHECK-IN",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = StatusExpiredRed,
+                letterSpacing = 1.sp
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Audio Buzzer Alert Triggered",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextWhite
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Member Card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0x20FFFFFF))
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = alert.memberName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(StatusActiveGreenBg)
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(text = "NEW TRIALIST", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusActiveGreen)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(text = "Session: ${alert.sessionType} (${alert.trialPassType})", fontSize = 12.sp, color = ByceCoolGray)
+                    Text(text = "Gate: ${alert.arrivalTime} · Phone: ${alert.phone}", fontSize = 11.sp, color = TextMuted)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0x18FFFFFF))
+                    .padding(10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Mandatory Protocol: Greet member at reception and provide a 5-minute facility & locker tour.",
+                    fontSize = 11.sp,
+                    color = ByceCoolGray,
+                    lineHeight = 15.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Acknowledge & Assign Tour Button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(Color(0xFF6B9330), Color(0xFF4E7320))
+                        )
+                    )
+                    .clickable { onAcknowledge() }
+                    .padding(vertical = 14.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = TextWhite, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Acknowledge & Start 5-Min Tour", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onDismiss() }
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "Silence Buzzer", fontSize = 12.sp, color = TextMuted)
             }
         }
     }

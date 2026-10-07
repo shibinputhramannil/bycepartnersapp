@@ -45,8 +45,10 @@ fun OwnerMembershipsScreen(
         GymOwnerRepository.getExpiringMemberships(expiringDaysFilter)
     }
     var selectedMembershipForDetail by remember { mutableStateOf<MembershipItem?>(null) }
+    var selectedMembershipForDefer by remember { mutableStateOf<MembershipItem?>(null) }
+    var refreshKey by remember { mutableIntStateOf(0) }
 
-    val filteredMemberships = remember(searchQuery, selectedStatusFilter, allMemberships) {
+    val filteredMemberships = remember(searchQuery, selectedStatusFilter, allMemberships, refreshKey) {
         allMemberships.filter { item ->
             val matchesQuery = item.customerName.contains(searchQuery, ignoreCase = true) ||
                     item.planName.contains(searchQuery, ignoreCase = true)
@@ -226,7 +228,24 @@ fun OwnerMembershipsScreen(
         selectedMembershipForDetail?.let { item ->
             MembershipDetailModal(
                 item = item,
-                onDismiss = { selectedMembershipForDetail = null }
+                onDismiss = { selectedMembershipForDetail = null },
+                onDeferClick = {
+                    selectedMembershipForDefer = item
+                }
+            )
+        }
+
+        // Deferment / Freeze Modal
+        selectedMembershipForDefer?.let { item ->
+            MembershipDefermentModal(
+                item = item,
+                onDismiss = { selectedMembershipForDefer = null },
+                onConfirmDefer = { days, reason ->
+                    GymOwnerRepository.deferMembership(item.id, days, reason)
+                    refreshKey++
+                    selectedMembershipForDefer = null
+                    selectedMembershipForDetail = null
+                }
             )
         }
 
@@ -396,7 +415,8 @@ private fun MembershipRowCard(
 @Composable
 private fun MembershipDetailModal(
     item: MembershipItem,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onDeferClick: () -> Unit
 ) {
     var reminderSent by remember { mutableStateOf(false) }
 
@@ -433,9 +453,9 @@ private fun MembershipDetailModal(
             DetailRow("End Date", item.endDate)
             DetailRow("Amount Paid", "₹${item.amount.toInt()}")
 
-            // Feature 8: Renewal Management Details
+            // Feature 8: Renewal & Freeze Management Details
             DetailRow("Renewal Status", if (item.status == "Expired") "Expired - Renewal Required" else "Active Pass")
-            DetailRow("Auto-Renew", "Manual (Customer Initiated)")
+            DetailRow("Deferment / Hold", if (item.status.contains("Hold")) "Currently Paused" else "Eligible for Deferment")
 
             Spacer(modifier = Modifier.height(6.dp))
             Row(
@@ -467,6 +487,23 @@ private fun MembershipDetailModal(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                // Freeze / Defer Button
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0x3038BDF8))
+                        .clickable { onDeferClick() }
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.PauseCircle, contentDescription = null, tint = StatusInfoBlue, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Freeze / Defer", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = StatusInfoBlue)
+                    }
+                }
+
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -481,22 +518,134 @@ private fun MembershipDetailModal(
                 ) {
                     Text(text = "Send Reminder", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextWhite)
                 }
+            }
+        }
+    }
+}
 
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color(0xFF6B9330), Color(0xFF4E7320))
-                            )
-                        )
-                        .clickable { onDismiss() }
-                        .padding(vertical = 12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "Close", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+@Composable
+private fun MembershipDefermentModal(
+    item: MembershipItem,
+    onDismiss: () -> Unit,
+    onConfirmDefer: (days: Int, reason: String) -> Unit
+) {
+    var selectedDays by remember { mutableIntStateOf(14) }
+    var selectedReason by remember { mutableStateOf("Medical / Injury") }
+    var customReason by remember { mutableStateOf("") }
+
+    val presetDays = listOf(7, 14, 30, 45)
+    val reasons = listOf("Medical / Injury", "Travel / Relocation", "Exam / Work Constraint", "Personal Leave")
+
+    OwnerModalDialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.PauseCircleFilled, contentDescription = null, tint = StatusInfoBlue, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Freeze / Defer Membership", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextWhite)
                 }
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = "Hold active pass for ${item.customerName}. Expiration date will be automatically extended by the selected days.",
+                fontSize = 12.sp,
+                color = ByceCoolGray,
+                lineHeight = 16.sp
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+            Text(text = "Select Pause Duration (Days)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                presetDays.forEach { days ->
+                    val isSelected = selectedDays == days
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isSelected) Color(0x3538BDF8) else Color(0x18FFFFFF))
+                            .border(1.dp, if (isSelected) StatusInfoBlue else Color.Transparent, RoundedCornerShape(12.dp))
+                        .clickable { selectedDays = days }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "+$days Days",
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) StatusInfoBlue else TextWhite
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+            Text(text = "Reason for Deferment", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            reasons.forEach { r ->
+                val isSelected = selectedReason == r
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (isSelected) Color(0x20FFFFFF) else Color(0x0AFFFFFF))
+                        .clickable { selectedReason = r }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = { selectedReason = r },
+                        colors = RadioButtonDefaults.colors(selectedColor = StatusInfoBlue, unselectedColor = TextMuted)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(text = r, fontSize = 13.sp, color = TextWhite)
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            LiquidGlassTextField(
+                value = customReason,
+                onValueChange = { customReason = it },
+                label = "Notes / Doctor Certificate Ref",
+                placeholder = "e.g. Doctor note ref #8491 attached"
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color(0xFF0284C7), Color(0xFF0369A1))
+                        )
+                    )
+                    .clickable {
+                        val finalReason = if (customReason.isNotBlank()) "$selectedReason ($customReason)" else selectedReason
+                        onConfirmDefer(selectedDays, finalReason)
+                    }
+                    .padding(vertical = 13.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "Confirm $selectedDays-Day Freeze", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
             }
         }
     }
