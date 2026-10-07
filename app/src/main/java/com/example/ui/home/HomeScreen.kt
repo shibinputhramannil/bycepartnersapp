@@ -98,11 +98,12 @@ data class GymLocation(
     val imageRes: Int,
     val tags: List<String>,
     val statusText: String,
-    val address: String = "100 Market St, San Francisco, CA",
-    val hours: String = "6:00 AM - 10:00 PM",
-    val latitude: Double = 37.789172,
-    val longitude: Double = -122.401449,
-    val rating: Double = 4.9
+    val address: String = "4th Floor, Emerald Plaza, Mavoor Road, Kozhikode, Kerala 673004",
+    val hours: String = "5:30 AM - 10:30 PM",
+    val latitude: Double = 11.2588,
+    val longitude: Double = 75.7804,
+    val rating: Double = 4.9,
+    val city: String = "Kozhikode"
 )
 
 data class VisitLog(
@@ -114,47 +115,89 @@ data class VisitLog(
     val imageRes: Int = R.drawable.pulse_fitness_gym_1789554105342
 )
 
-// Sample Data
+// Sample Data with Kerala Centers (Kozhikode, Kannur, Kochi, Trivandrum)
 val SAMPLE_GYMS = listOf(
     GymLocation(
         id = "1",
-        name = "Pulse Fitness",
-        distance = "1.2 km away",
-        cityArea = "Downtown · SF",
+        name = "Iron House Fitness (BYCE Elite)",
+        distance = "0.8 km away",
+        cityArea = "Mavoor Road · Kozhikode",
         imageRes = R.drawable.pulse_fitness_gym_1789554105342,
-        tags = listOf("Free weights", "Classes", "Sauna"),
-        statusText = "Open · Quiet now",
-        latitude = 37.789172,
-        longitude = -122.401449
+        tags = listOf("Free weights", "Classes", "Sauna", "HRX"),
+        statusText = "Open · Verified BYCE Center",
+        address = "4th Floor, Emerald Plaza, Mavoor Road, Kozhikode, Kerala 673004",
+        hours = "5:30 AM - 10:30 PM",
+        latitude = 11.2588,
+        longitude = 75.7804,
+        rating = 4.9,
+        city = "Kozhikode"
     ),
     GymLocation(
         id = "2",
-        name = "Iron Vault Gym",
-        distance = "2.5 km away",
-        cityArea = "SoMa · SF",
+        name = "BYCE Power Hub & Combat",
+        distance = "2.4 km away",
+        cityArea = "Payyambalam · Kannur",
         imageRes = R.drawable.iron_vault_gym_1789554122844,
-        tags = listOf("Heavy lifting", "Sauna", "Turf"),
+        tags = listOf("Boxing", "Heavy lifting", "Sauna", "Turf"),
         statusText = "Open · Moderate crowd",
-        latitude = 37.778519,
-        longitude = -122.395232
+        address = "Bayview Tower, Payyambalam Road, Kannur, Kerala 670001",
+        hours = "6:00 AM - 10:00 PM",
+        latitude = 11.8745,
+        longitude = 75.3704,
+        rating = 4.8,
+        city = "Kannur"
     ),
     GymLocation(
         id = "3",
-        name = "Zenith Health Club",
-        distance = "3.8 km away",
-        cityArea = "Marina · SF",
+        name = "BYCE High-Performance Studio",
+        distance = "4.1 km away",
+        cityArea = "Marine Drive · Kochi",
         imageRes = R.drawable.zenith_health_club_1789554140602,
-        tags = listOf("Cardio deck", "Pool", "Yoga"),
-        statusText = "Open 24/7",
-        latitude = 37.800542,
-        longitude = -122.436128
+        tags = listOf("Cardio deck", "Yoga", "Pool", "Strength"),
+        statusText = "Open 24/7 · Elite Center",
+        address = "Seaview Arcade, Marine Drive, MG Road, Kochi, Kerala 682031",
+        hours = "Open 24 Hours",
+        latitude = 9.9816,
+        longitude = 76.2763,
+        rating = 4.9,
+        city = "Kochi"
+    ),
+    GymLocation(
+        id = "4",
+        name = "BYCE Titanium Fitness Arena",
+        distance = "5.6 km away",
+        cityArea = "Kowdiar · Trivandrum",
+        imageRes = R.drawable.pulse_fitness_gym_1789554105342,
+        tags = listOf("S&C", "HRX", "Steam", "Cardio"),
+        statusText = "Open · Quiet now",
+        address = "Royal Heights, Kowdiar Main Avenue, Trivandrum, Kerala 695003",
+        hours = "5:30 AM - 10:00 PM",
+        latitude = 8.5241,
+        longitude = 76.9366,
+        rating = 4.9,
+        city = "Trivandrum"
+    ),
+    GymLocation(
+        id = "5",
+        name = "BYCE Coastal CrossFit & Arena",
+        distance = "1.5 km away",
+        cityArea = "Beach Road · Kozhikode",
+        imageRes = R.drawable.iron_vault_gym_1789554122844,
+        tags = listOf("CrossFit", "Open Turf", "HIIT", "Classes"),
+        statusText = "Open · High energy",
+        address = "Near Lighthouse, Beach Road, Kozhikode, Kerala 673032",
+        hours = "6:00 AM - 10:00 PM",
+        latitude = 11.2612,
+        longitude = 75.7698,
+        rating = 4.8,
+        city = "Kozhikode"
     )
 )
 
 val SAMPLE_VISITS = listOf(
-    VisitLog("v1", "Pulse Fitness", "Today", "6:42 PM", imageRes = R.drawable.pulse_fitness_gym_1789554105342),
-    VisitLog("v2", "Iron Vault Gym", "Yesterday", "7:15 AM", imageRes = R.drawable.iron_vault_gym_1789554122844),
-    VisitLog("v3", "Pulse Fitness", "Sep 12", "5:30 PM", imageRes = R.drawable.pulse_fitness_gym_1789554105342)
+    VisitLog("v1", "Iron House Fitness (BYCE Elite)", "Today", "6:42 PM", imageRes = R.drawable.pulse_fitness_gym_1789554105342),
+    VisitLog("v2", "BYCE Power Hub & Combat", "Yesterday", "7:15 AM", imageRes = R.drawable.iron_vault_gym_1789554122844),
+    VisitLog("v3", "BYCE High-Performance Studio", "Sep 12", "5:30 PM", imageRes = R.drawable.zenith_health_club_1789554140602)
 )
 
 /**

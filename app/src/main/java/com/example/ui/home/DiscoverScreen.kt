@@ -34,10 +34,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -87,6 +89,7 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.launch
+import com.example.R
 import com.example.ui.components.FloatingBlurBalls
 import com.example.ui.components.LiquidGlassCard
 import com.example.ui.components.LiquidGlassTextField
@@ -494,6 +497,9 @@ private fun DiscoverMapSearchView(
     onTabSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var selectedCity by remember { mutableStateOf("All Kerala") }
+    val cities = listOf("All Kerala", "Kozhikode", "Kannur", "Kochi", "Trivandrum")
+
     var selectedGym by remember { mutableStateOf<GymLocation?>(SAMPLE_GYMS.firstOrNull()) }
     val listState = rememberLazyListState()
     val isScrolling = listState.isScrollInProgress
@@ -501,12 +507,18 @@ private fun DiscoverMapSearchView(
 
     val density = LocalDensity.current
 
-    val filteredGyms = remember(searchQuery, selectedFilter, sortBy) {
+    val filteredGyms = remember(searchQuery, selectedFilter, sortBy, selectedCity) {
         val baseList = SAMPLE_GYMS.filter { gym ->
             val matchesQuery = searchQuery.isBlank() ||
                     gym.name.contains(searchQuery, ignoreCase = true) ||
                     gym.cityArea.contains(searchQuery, ignoreCase = true) ||
+                    gym.address.contains(searchQuery, ignoreCase = true) ||
                     gym.tags.any { it.contains(searchQuery, ignoreCase = true) }
+
+            val matchesCity = if (selectedCity == "All Kerala") true else {
+                gym.city.equals(selectedCity, ignoreCase = true) || gym.cityArea.contains(selectedCity, ignoreCase = true)
+            }
+
             val matchesFilter = when (selectedFilter) {
                 "All" -> true
                 "Free weights" -> gym.tags.contains("Free weights") || gym.tags.contains("Heavy lifting")
@@ -515,7 +527,7 @@ private fun DiscoverMapSearchView(
                 "Open 24/7" -> gym.statusText.contains("24/7")
                 else -> true
             }
-            matchesQuery && matchesFilter
+            matchesQuery && matchesCity && matchesFilter
         }
 
         when (sortBy) {
@@ -554,13 +566,18 @@ private fun DiscoverMapSearchView(
         val currentSheetHeightDp = with(density) { currentSheetHeightPx.toDp() }
 
         var recenterTrigger by remember { mutableIntStateOf(0) }
+        var zoomInTrigger by remember { mutableIntStateOf(0) }
+        var zoomOutTrigger by remember { mutableIntStateOf(0) }
 
         // 1. FULL BACKGROUND: Interactive Original Style Dark Map Engine
         Box(modifier = Modifier.fillMaxSize()) {
             DarkLeafletMapView(
                 gyms = SAMPLE_GYMS,
                 selectedGym = selectedGym,
+                selectedCity = selectedCity,
                 recenterTrigger = recenterTrigger,
+                zoomInTrigger = zoomInTrigger,
+                zoomOutTrigger = zoomOutTrigger,
                 onGymClicked = { gymId ->
                     val clicked = SAMPLE_GYMS.find { it.id == gymId }
                     if (clicked != null) {
@@ -569,29 +586,71 @@ private fun DiscoverMapSearchView(
                 }
             )
 
-            // Recenter FAB (floats above the bottom sheet)
-            Box(
+            // Zoom & Recenter Controls (floats above the bottom sheet)
+            Column(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(end = 16.dp)
-                    .offset(y = -currentSheetHeightDp - 14.dp)
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xD9262526))
-                    .border(1.dp, Color(0x33FFFFFF), CircleShape)
-                    .clickable { recenterTrigger++ },
-                contentAlignment = Alignment.Center
+                    .offset(y = -currentSheetHeightDp - 14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.MyLocation,
-                    contentDescription = "Recenter Map",
-                    tint = Color(0xFFFFFFFF),
-                    modifier = Modifier.size(20.dp)
-                )
+                // Zoom In FAB
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xD9262526))
+                        .border(1.dp, Color(0x33FFFFFF), CircleShape)
+                        .clickable { zoomInTrigger++ },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Zoom In",
+                        tint = Color(0xFFFFFFFF),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                // Zoom Out FAB
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xD9262526))
+                        .border(1.dp, Color(0x33FFFFFF), CircleShape)
+                        .clickable { zoomOutTrigger++ },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Remove,
+                        contentDescription = "Zoom Out",
+                        tint = Color(0xFFFFFFFF),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                // Recenter FAB
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xD9262526))
+                        .border(1.dp, Color(0x33FFFFFF), CircleShape)
+                        .clickable { recenterTrigger++ },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MyLocation,
+                        contentDescription = "Recenter Map",
+                        tint = Color(0xFFFFFFFF),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
 
-        // 2. FLOATING TOP OVERLAY: Back Button + Live Search Bar + Filter Pills
+        // 2. FLOATING TOP OVERLAY: Back Button + Live Search Bar + City Pills + Filter Pills
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -626,7 +685,7 @@ private fun DiscoverMapSearchView(
                     LiquidGlassTextField(
                         value = searchQuery,
                         onValueChange = onSearchQueryChange,
-                        placeholder = "Search gyms, amenities, areas...",
+                        placeholder = "Search Kerala BYCE gyms...",
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Search,
@@ -652,7 +711,49 @@ private fun DiscoverMapSearchView(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // City Navigation Pills (Kozhikode, Kannur, Kochi, Trivandrum)
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(cities) { city ->
+                    val isSelected = city == selectedCity
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50.dp))
+                            .background(if (isSelected) Color(0xFF6B9330) else Color(0x352D2C2D))
+                            .border(1.dp, if (isSelected) Color(0xFF8DBB45) else Color(0x25FFFFFF), RoundedCornerShape(50.dp))
+                            .clickable {
+                                selectedCity = city
+                                val match = SAMPLE_GYMS.firstOrNull { it.city.equals(city, ignoreCase = true) }
+                                if (match != null) {
+                                    selectedGym = match
+                                }
+                            }
+                            .padding(horizontal = 13.dp, vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = if (isSelected) Color(0xFFFFFFFF) else Color(0xFFB0AFB0),
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = city,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color(0xFFFFFFFF) else Color(0xFFD0CFD0)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Filter Chips
             LazyRow(
@@ -856,37 +957,71 @@ private fun DiscoverMapSearchView(
 }
 
 /**
- * Interactive Original-Style Dark Vector Map.
+ * Interactive Original-Style Dark Vector Map for Kerala.
  * Supports smooth 60fps pan/drag in any direction and pinch-to-zoom.
- * Renders realistic waterways, parks, city blocks, expressways, street grid, district labels,
- * pulsing user GPS radar dot, dashed route line, and interactive gym pin badges.
+ * Renders Kerala Arabian Sea coast, backwaters, NH 66 corridor, city districts (Kozhikode, Kannur, Kochi, Trivandrum),
+ * pulsing user GPS radar dot, dashed route line, and interactive BYCE Kettlebell Logo pins.
  */
 @Composable
 private fun DarkLeafletMapView(
     gyms: List<GymLocation>,
     selectedGym: GymLocation?,
-    recenterTrigger: Int,
+    selectedCity: String = "All Kerala",
+    recenterTrigger: Int = 0,
+    zoomInTrigger: Int = 0,
+    zoomOutTrigger: Int = 0,
     onGymClicked: (String) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
 
-    // Virtual origin for user location
-    val userVirtualX = 800f
-    val userVirtualY = 800f
+    // Virtual origin for user location (Kozhikode Center)
+    val userVirtualX = 615f
+    val userVirtualY = 680f
 
     // Animated pan offsets & zoom
     val animPanX = remember { Animatable(0f) }
     val animPanY = remember { Animatable(0f) }
     val animZoom = remember { Animatable(1f) }
 
-    // Map gym IDs to virtual coordinates
+    // Map gym IDs to virtual coordinates across Kerala
     val gymCoordinates = remember(gyms) {
+        gyms.associate { gym ->
+            val offset = when (gym.id) {
+                "2" -> Offset(480f, 430f)   // Kannur (Payyambalam)
+                "1" -> Offset(615f, 680f)   // Kozhikode (Mavoor Rd)
+                "5" -> Offset(550f, 740f)   // Kozhikode (Beach Rd)
+                "3" -> Offset(770f, 1180f)  // Kochi (Marine Drive)
+                "4" -> Offset(980f, 1750f)  // Trivandrum (Kowdiar)
+                else -> {
+                    val y = 1900f - ((gym.latitude.toFloat() - 8.2f) / 4.0f) * 1600f
+                    val x = 300f + ((gym.longitude.toFloat() - 74.8f) / 2.8f) * 900f
+                    Offset(x.coerceIn(200f, 1400f), y.coerceIn(200f, 1900f))
+                }
+            }
+            gym.id to offset
+        }
+    }
+
+    // City focal targets
+    val cityFocalPoints = remember {
         mapOf(
-            "g1" to Offset(660f, 620f),  // Pulse Fitness (North-West)
-            "g2" to Offset(980f, 660f),  // Iron Vault Gym (North-East)
-            "g3" to Offset(860f, 1020f)  // Apex Performance (South)
+            "All Kerala" to Triple(userVirtualX - 700f, userVirtualY - 1050f, 0.72f),
+            "Kannur" to Triple(userVirtualX - 480f, userVirtualY - 430f, 1.35f),
+            "Kozhikode" to Triple(0f, 0f, 1.35f),
+            "Kochi" to Triple(userVirtualX - 770f, userVirtualY - 1180f, 1.35f),
+            "Trivandrum" to Triple(userVirtualX - 980f, userVirtualY - 1750f, 1.35f)
         )
+    }
+
+    // Auto pan/zoom when city filter is selected
+    LaunchedEffect(selectedCity) {
+        val target = cityFocalPoints[selectedCity]
+        if (target != null) {
+            launch { animPanX.animateTo(target.first, tween(550, easing = FastOutSlowInEasing)) }
+            launch { animPanY.animateTo(target.second, tween(550, easing = FastOutSlowInEasing)) }
+            launch { animZoom.animateTo(target.third, tween(550, easing = FastOutSlowInEasing)) }
+        }
     }
 
     // Recenter animation when button is clicked
@@ -895,6 +1030,22 @@ private fun DarkLeafletMapView(
             launch { animPanX.animateTo(0f, tween(450, easing = FastOutSlowInEasing)) }
             launch { animPanY.animateTo(0f, tween(450, easing = FastOutSlowInEasing)) }
             launch { animZoom.animateTo(1f, tween(450, easing = FastOutSlowInEasing)) }
+        }
+    }
+
+    // Zoom In FAB
+    LaunchedEffect(zoomInTrigger) {
+        if (zoomInTrigger > 0) {
+            val targetZoom = (animZoom.value * 1.35f).coerceIn(0.55f, 2.8f)
+            animZoom.animateTo(targetZoom, tween(300, easing = FastOutSlowInEasing))
+        }
+    }
+
+    // Zoom Out FAB
+    LaunchedEffect(zoomOutTrigger) {
+        if (zoomOutTrigger > 0) {
+            val targetZoom = (animZoom.value * 0.74f).coerceIn(0.55f, 2.8f)
+            animZoom.animateTo(targetZoom, tween(300, easing = FastOutSlowInEasing))
         }
     }
 
@@ -915,7 +1066,7 @@ private fun DarkLeafletMapView(
     val infiniteTransition = rememberInfiniteTransition(label = "map_radar_pulse")
     val radarPulseRadius by infiniteTransition.animateFloat(
         initialValue = 10f,
-        targetValue = 44f,
+        targetValue = 46f,
         animationSpec = infiniteRepeatable(
             animation = tween(2200, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
@@ -939,7 +1090,7 @@ private fun DarkLeafletMapView(
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
                     coroutineScope.launch {
-                        val newZoom = (animZoom.value * zoom).coerceIn(0.65f, 2.5f)
+                        val newZoom = (animZoom.value * zoom).coerceIn(0.55f, 2.8f)
                         animZoom.snapTo(newZoom)
                         animPanX.snapTo(animPanX.value + pan.x)
                         animPanY.snapTo(animPanY.value + pan.y)
@@ -952,126 +1103,121 @@ private fun DarkLeafletMapView(
         val viewCenterX = screenWidth / 2f
         val viewCenterY = screenHeight * 0.36f // Map viewport center above half bottom sheet
 
-        // 1. HARDWARE-ACCELERATED VECTOR MAP CANVAS
+        // 1. HARDWARE-ACCELERATED KERALA VECTOR MAP CANVAS
         Canvas(modifier = Modifier.fillMaxSize()) {
             withTransform({
                 translate(viewCenterX + animPanX.value, viewCenterY + animPanY.value)
                 scale(animZoom.value, animZoom.value, Offset.Zero)
                 translate(-userVirtualX, -userVirtualY)
             }) {
-                // Background surface
-                drawRect(color = Color(0xFF131215), size = Size(1600f, 1600f))
+                // Background land surface
+                drawRect(color = Color(0xFF131215), size = Size(1800f, 2200f))
 
                 // ----------------------------------------------------
-                // 1. NATURAL WATERWAY / BAY
+                // 1. ARABIAN SEA / KERALA WEST COASTLINE
                 // ----------------------------------------------------
-                val waterPath = Path().apply {
+                val seaPath = Path().apply {
                     moveTo(0f, 0f)
-                    lineTo(1600f, 0f)
-                    lineTo(1600f, 320f)
-                    cubicTo(1400f, 340f, 1250f, 260f, 1100f, 310f)
-                    cubicTo(950f, 360f, 850f, 290f, 700f, 330f)
-                    cubicTo(550f, 370f, 400f, 280f, 250f, 350f)
-                    cubicTo(120f, 410f, 50f, 380f, 0f, 420f)
+                    lineTo(380f, 0f)
+                    cubicTo(370f, 250f, 440f, 400f, 460f, 500f) // Kannur coast
+                    cubicTo(480f, 600f, 520f, 700f, 540f, 820f) // Kozhikode coast
+                    cubicTo(560f, 950f, 640f, 1080f, 720f, 1200f) // Kochi coast
+                    cubicTo(780f, 1350f, 860f, 1550f, 940f, 1750f) // Alleppey -> Kollam -> Trivandrum
+                    cubicTo(970f, 1850f, 1020f, 2000f, 1050f, 2200f)
+                    lineTo(0f, 2200f)
                     close()
                 }
-                drawPath(waterPath, color = Color(0xFF0F1822))
-                drawPath(
-                    waterPath,
-                    color = Color(0xFF1B2B3C),
-                    style = Stroke(width = 3f)
-                )
-
-                // Secondary River Channel
-                val riverPath = Path().apply {
-                    moveTo(1600f, 820f)
-                    cubicTo(1350f, 800f, 1200f, 920f, 1050f, 900f)
-                    cubicTo(900f, 880f, 820f, 960f, 700f, 980f)
-                    cubicTo(580f, 1000f, 450f, 940f, 300f, 970f)
-                    cubicTo(150f, 1000f, 80f, 1080f, 0f, 1100f)
-                    lineTo(0f, 1135f)
-                    cubicTo(80f, 1115f, 150f, 1035f, 300f, 1005f)
-                    cubicTo(450f, 975f, 580f, 1035f, 700f, 1015f)
-                    cubicTo(820f, 995f, 900f, 915f, 1050f, 935f)
-                    cubicTo(1200f, 955f, 1350f, 835f, 1600f, 855f)
-                    close()
-                }
-                drawPath(riverPath, color = Color(0xFF0E1620))
-                drawPath(riverPath, color = Color(0xFF162534), style = Stroke(width = 2f))
+                drawPath(seaPath, color = Color(0xFF0C1622)) // Arabian sea deep water
+                drawPath(seaPath, color = Color(0xFF162D42), style = Stroke(width = 3.5f)) // Coastline surf
 
                 // ----------------------------------------------------
-                // 2. PARKS & NATURE RESERVES
+                // 2. VEMBANAD BACKWATERS & RIVERS (Kochi / Alleppey)
                 // ----------------------------------------------------
-                val marinaPark = Path().apply {
-                    moveTo(180f, 440f)
-                    cubicTo(260f, 430f, 380f, 450f, 440f, 490f)
-                    cubicTo(420f, 580f, 260f, 590f, 160f, 560f)
+                val backwaterPath = Path().apply {
+                    moveTo(740f, 1140f)
+                    cubicTo(790f, 1170f, 820f, 1240f, 800f, 1320f)
+                    cubicTo(780f, 1380f, 820f, 1450f, 850f, 1500f)
+                    cubicTo(820f, 1500f, 780f, 1400f, 760f, 1300f)
+                    cubicTo(740f, 1220f, 710f, 1180f, 740f, 1140f)
                     close()
                 }
-                drawPath(marinaPark, color = Color(0xFF132218))
-                drawPath(marinaPark, color = Color(0xFF1E3626), style = Stroke(width = 1.5f))
+                drawPath(backwaterPath, color = Color(0xFF0E1A26))
+                drawPath(backwaterPath, color = Color(0xFF1B3850), style = Stroke(width = 2f))
 
-                val missionPark = Path().apply {
-                    moveTo(720f, 740f)
-                    cubicTo(800f, 730f, 880f, 760f, 890f, 820f)
-                    cubicTo(860f, 870f, 760f, 880f, 710f, 840f)
-                    close()
+                // Kozhikode River (Chaliyar River channel)
+                val chaliyarPath = Path().apply {
+                    moveTo(1400f, 780f)
+                    cubicTo(1150f, 770f, 900f, 810f, 750f, 800f)
+                    cubicTo(680f, 790f, 600f, 830f, 530f, 820f)
                 }
-                drawPath(missionPark, color = Color(0xFF132218))
-                drawPath(missionPark, color = Color(0xFF1E3626), style = Stroke(width = 1.5f))
-
-                val southPark = Path().apply {
-                    moveTo(1020f, 1120f)
-                    cubicTo(1150f, 1100f, 1260f, 1150f, 1240f, 1260f)
-                    cubicTo(1160f, 1300f, 1000f, 1260f, 980f, 1180f)
-                    close()
-                }
-                drawPath(southPark, color = Color(0xFF132218))
-                drawPath(southPark, color = Color(0xFF1E3626), style = Stroke(width = 1.5f))
+                drawPath(chaliyarPath, color = Color(0xFF0E1A26), style = Stroke(width = 12f, cap = StrokeCap.Round))
+                drawPath(chaliyarPath, color = Color(0xFF1B3850), style = Stroke(width = 2f))
 
                 // ----------------------------------------------------
-                // 3. CITY BLOCKS & NEIGHBORHOOD ARCHITECTURE
+                // 3. WESTERN GHATS & NATURE RESERVES (Green Belts)
+                // ----------------------------------------------------
+                // Wayanad / Aralam Reserve (East of Kannur/Calicut)
+                val wayanadPark = Path().apply {
+                    moveTo(760f, 320f)
+                    cubicTo(920f, 300f, 1050f, 380f, 1020f, 500f)
+                    cubicTo(960f, 580f, 840f, 560f, 770f, 460f)
+                    close()
+                }
+                drawPath(wayanadPark, color = Color(0xFF112217))
+                drawPath(wayanadPark, color = Color(0xFF1B3624), style = Stroke(width = 1.5f))
+
+                // Munnar / High Ranges (East of Kochi)
+                val munnarPark = Path().apply {
+                    moveTo(960f, 1050f)
+                    cubicTo(1140f, 1020f, 1240f, 1120f, 1190f, 1250f)
+                    cubicTo(1110f, 1320f, 970f, 1260f, 940f, 1160f)
+                    close()
+                }
+                drawPath(munnarPark, color = Color(0xFF112217))
+                drawPath(munnarPark, color = Color(0xFF1B3624), style = Stroke(width = 1.5f))
+
+                // Ponmudi / Agasthyakoodam Reserve (East of Trivandrum)
+                val ponmudiPark = Path().apply {
+                    moveTo(1100f, 1680f)
+                    cubicTo(1250f, 1650f, 1340f, 1740f, 1290f, 1850f)
+                    cubicTo(1210f, 1910f, 1110f, 1860f, 1080f, 1770f)
+                    close()
+                }
+                drawPath(ponmudiPark, color = Color(0xFF112217))
+                drawPath(ponmudiPark, color = Color(0xFF1B3624), style = Stroke(width = 1.5f))
+
+                // ----------------------------------------------------
+                // 4. KERALA CITY DISTRICT BLOCKS
                 // ----------------------------------------------------
                 val blockColor = Color(0xFF18171A)
                 val blockBorder = Color(0xFF222125)
 
                 val cityBlocks = listOf(
-                    // NW District
-                    Triple(220f, 620f, Size(120f, 80f)),
-                    Triple(360f, 620f, Size(110f, 80f)),
-                    Triple(220f, 720f, Size(120f, 90f)),
-                    Triple(360f, 720f, Size(110f, 90f)),
-                    Triple(490f, 620f, Size(130f, 80f)),
-                    Triple(490f, 720f, Size(130f, 90f)),
+                    // Kannur Zone (Payyambalam / Fort / Stadium)
+                    Triple(440f, 380f, Size(100f, 65f)),
+                    Triple(560f, 380f, Size(110f, 65f)),
+                    Triple(440f, 460f, Size(95f, 75f)),
+                    Triple(550f, 460f, Size(120f, 75f)),
 
-                    // Downtown Central
-                    Triple(640f, 480f, Size(130f, 100f)),
-                    Triple(790f, 480f, Size(140f, 100f)),
-                    Triple(950f, 480f, Size(130f, 100f)),
-                    Triple(1100f, 480f, Size(120f, 100f)),
+                    // Kozhikode Zone (Mavoor Rd / Beach Rd / Focus Mall / Cyberpark)
+                    Triple(520f, 640f, Size(120f, 70f)),
+                    Triple(660f, 640f, Size(130f, 70f)),
+                    Triple(520f, 730f, Size(115f, 80f)),
+                    Triple(650f, 730f, Size(140f, 80f)),
+                    Triple(810f, 680f, Size(130f, 85f)),
 
-                    Triple(640f, 600f, Size(130f, 110f)),
-                    Triple(790f, 600f, Size(140f, 110f)),
-                    Triple(950f, 600f, Size(130f, 110f)),
-                    Triple(1100f, 600f, Size(120f, 110f)),
+                    // Kochi Zone (Marine Drive / MG Road / Kakkanad Infopark)
+                    Triple(670f, 1120f, Size(130f, 80f)),
+                    Triple(820f, 1120f, Size(140f, 80f)),
+                    Triple(670f, 1220f, Size(125f, 90f)),
+                    Triple(810f, 1220f, Size(150f, 90f)),
+                    Triple(980f, 1160f, Size(140f, 100f)),
 
-                    // Financial / SOMA
-                    Triple(920f, 740f, Size(160f, 110f)),
-                    Triple(1100f, 740f, Size(130f, 110f)),
-                    Triple(1250f, 740f, Size(140f, 110f)),
-
-                    // Mission / Potrero
-                    Triple(520f, 840f, Size(150f, 90f)),
-                    Triple(520f, 950f, Size(150f, 110f)),
-                    Triple(700f, 900f, Size(130f, 100f)),
-                    Triple(850f, 900f, Size(120f, 100f)),
-
-                    // South District
-                    Triple(680f, 1060f, Size(140f, 100f)),
-                    Triple(840f, 1060f, Size(140f, 100f)),
-                    Triple(1000f, 1060f, Size(130f, 100f)),
-                    Triple(680f, 1180f, Size(140f, 110f)),
-                    Triple(840f, 1180f, Size(140f, 110f))
+                    // Trivandrum Zone (Kowdiar / MG Road / Technopark / Kowdiar Palace)
+                    Triple(880f, 1680f, Size(130f, 85f)),
+                    Triple(1030f, 1680f, Size(140f, 85f)),
+                    Triple(880f, 1780f, Size(125f, 95f)),
+                    Triple(1020f, 1780f, Size(150f, 95f))
                 )
 
                 for ((bx, by, bsize) in cityBlocks) {
@@ -1091,91 +1237,68 @@ private fun DarkLeafletMapView(
                 }
 
                 // ----------------------------------------------------
-                // 4. SECONDARY STREETS & AVENUES
+                // 5. SECONDARY ARTERIAL ROADS & CITY GRIDS
                 // ----------------------------------------------------
                 val streetColor = Color(0xFF1E1D21)
-                val avenueColor = Color(0xFF262529)
+                val avenueColor = Color(0xFF27262B)
 
-                // Horizontal streets
-                listOf(460f, 590f, 720f, 830f, 870f, 1020f, 1040f, 1170f, 1310f).forEach { yPos ->
-                    drawLine(
-                        color = streetColor,
-                        start = Offset(100f, yPos),
-                        end = Offset(1500f, yPos),
-                        strokeWidth = 3.5f
-                    )
+                // Kannur local streets
+                listOf(360f, 450f, 540f).forEach { yPos ->
+                    drawLine(color = streetColor, start = Offset(400f, yPos), end = Offset(720f, yPos), strokeWidth = 3f)
                 }
+                // Kozhikode Mavoor Road & Beach Road avenues
+                drawLine(color = avenueColor, start = Offset(480f, 690f), end = Offset(980f, 690f), strokeWidth = 7f, cap = StrokeCap.Round)
+                drawLine(color = avenueColor, start = Offset(620f, 600f), end = Offset(620f, 860f), strokeWidth = 6f, cap = StrokeCap.Round)
 
-                // Vertical streets
-                listOf(200f, 350f, 480f, 630f, 780f, 935f, 1090f, 1240f, 1400f).forEach { xPos ->
-                    drawLine(
-                        color = streetColor,
-                        start = Offset(xPos, 380f),
-                        end = Offset(xPos, 1400f),
-                        strokeWidth = 3.5f
-                    )
-                }
+                // Kochi Marine Drive & MG Road avenues
+                drawLine(color = avenueColor, start = Offset(630f, 1190f), end = Offset(1180f, 1190f), strokeWidth = 7f, cap = StrokeCap.Round)
+                drawLine(color = avenueColor, start = Offset(780f, 1080f), end = Offset(780f, 1340f), strokeWidth = 6f, cap = StrokeCap.Round)
 
-                // Main Avenues (wider)
-                drawLine(
-                    color = avenueColor,
-                    start = Offset(100f, 725f),
-                    end = Offset(1500f, 725f),
-                    strokeWidth = 7f,
-                    cap = StrokeCap.Round
-                )
-                drawLine(
-                    color = avenueColor,
-                    start = Offset(780f, 350f),
-                    end = Offset(780f, 1400f),
-                    strokeWidth = 7f,
-                    cap = StrokeCap.Round
-                )
-                drawLine(
-                    color = avenueColor,
-                    start = Offset(1090f, 350f),
-                    end = Offset(1090f, 1400f),
-                    strokeWidth = 7f,
-                    cap = StrokeCap.Round
-                )
-
-                // Diagonal Boulevard (Broadway / Market St Style)
-                drawLine(
-                    color = Color(0xFF2C2B30),
-                    start = Offset(180f, 1100f),
-                    end = Offset(1350f, 480f),
-                    strokeWidth = 9f,
-                    cap = StrokeCap.Round
-                )
+                // Trivandrum Kowdiar Main Avenue & MG Road
+                drawLine(color = avenueColor, start = Offset(830f, 1740f), end = Offset(1250f, 1740f), strokeWidth = 7f, cap = StrokeCap.Round)
+                drawLine(color = avenueColor, start = Offset(980f, 1640f), end = Offset(980f, 1900f), strokeWidth = 6f, cap = StrokeCap.Round)
 
                 // ----------------------------------------------------
-                // 5. MAJOR EXPRESSWAY / HIGHWAY (HWY 101)
+                // 6. MAJOR NH 66 EXPRESSWAY CORRIDOR (KERALA HIGHWAY)
                 // ----------------------------------------------------
-                val hwyPath = Path().apply {
-                    moveTo(1450f, 340f)
-                    cubicTo(1380f, 550f, 1280f, 850f, 1200f, 1050f)
-                    cubicTo(1150f, 1200f, 1050f, 1350f, 980f, 1500f)
+                val nh66Path = Path().apply {
+                    moveTo(470f, 150f)
+                    cubicTo(490f, 380f, 580f, 650f, 620f, 750f) // Kannur to Calicut
+                    cubicTo(670f, 900f, 750f, 1100f, 780f, 1250f) // Calicut to Kochi
+                    cubicTo(820f, 1400f, 900f, 1650f, 990f, 1850f) // Kochi to Trivandrum
+                    lineTo(1040f, 2150f)
                 }
                 // Highway bed
                 drawPath(
-                    hwyPath,
+                    nh66Path,
                     color = Color(0xFF323038),
-                    style = Stroke(width = 14f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                    style = Stroke(width = 13f, cap = StrokeCap.Round, join = StrokeJoin.Round)
                 )
                 // Highway center divider
                 drawPath(
-                    hwyPath,
+                    nh66Path,
                     color = Color(0xFF1E1D22),
                     style = Stroke(width = 2f, cap = StrokeCap.Round, join = StrokeJoin.Round)
                 )
 
                 // ----------------------------------------------------
-                // 6. DISTRICT & STREET LABELS (Typography)
+                // 7. DISTRICT, CITY & HIGHWAY LABELS (Typography)
                 // ----------------------------------------------------
                 drawContext.canvas.nativeCanvas.apply {
-                    val districtPaint = android.graphics.Paint().apply {
-                        color = android.graphics.Color.argb(130, 170, 168, 175)
-                        textSize = 24f
+                    val regionPaint = android.graphics.Paint().apply {
+                        color = android.graphics.Color.argb(80, 100, 160, 220)
+                        textSize = 28f
+                        isAntiAlias = true
+                        letterSpacing = 0.35f
+                        typeface = android.graphics.Typeface.create(
+                            android.graphics.Typeface.DEFAULT,
+                            android.graphics.Typeface.BOLD
+                        )
+                    }
+
+                    val cityPaint = android.graphics.Paint().apply {
+                        color = android.graphics.Color.argb(170, 235, 235, 240)
+                        textSize = 23f
                         isAntiAlias = true
                         letterSpacing = 0.22f
                         typeface = android.graphics.Typeface.create(
@@ -1185,8 +1308,8 @@ private fun DarkLeafletMapView(
                     }
 
                     val streetPaint = android.graphics.Paint().apply {
-                        color = android.graphics.Color.argb(90, 140, 138, 145)
-                        textSize = 17f
+                        color = android.graphics.Color.argb(100, 150, 148, 155)
+                        textSize = 15f
                         isAntiAlias = true
                         letterSpacing = 0.12f
                         typeface = android.graphics.Typeface.create(
@@ -1195,28 +1318,35 @@ private fun DarkLeafletMapView(
                         )
                     }
 
-                    drawText("MARINA DISTRICT", 230f, 520f, districtPaint)
-                    drawText("DOWNTOWN", 710f, 545f, districtPaint)
-                    drawText("FINANCIAL DIST", 970f, 545f, districtPaint)
-                    drawText("SOMA", 840f, 790f, districtPaint)
-                    drawText("MISSION BAY", 620f, 980f, districtPaint)
-                    drawText("POTRERO HILL", 910f, 1220f, districtPaint)
+                    drawText("ARABIAN SEA", 120f, 750f, regionPaint)
+                    drawText("ARABIAN SEA", 200f, 1400f, regionPaint)
 
-                    drawText("MARKET ST", 680f, 800f, streetPaint)
-                    drawText("BRANNAN ST", 950f, 715f, streetPaint)
-                    drawText("HWY 101", 1250f, 920f, streetPaint)
-                    drawText("4TH AVE", 790f, 430f, streetPaint)
+                    drawText("KANNUR", 460f, 350f, cityPaint)
+                    drawText("PAYYAMBALAM", 450f, 440f, streetPaint)
+
+                    drawText("KOZHIKODE", 600f, 615f, cityPaint)
+                    drawText("MAVOOR ROAD", 680f, 680f, streetPaint)
+                    drawText("BEACH ROAD", 490f, 780f, streetPaint)
+
+                    drawText("KOCHI", 760f, 1090f, cityPaint)
+                    drawText("MARINE DRIVE", 740f, 1175f, streetPaint)
+                    drawText("MG ROAD", 880f, 1260f, streetPaint)
+
+                    drawText("TRIVANDRUM", 940f, 1640f, cityPaint)
+                    drawText("KOWDIAR AVE", 960f, 1725f, streetPaint)
+
+                    drawText("NH 66 HIGHWAY", 570f, 920f, streetPaint)
+                    drawText("NH 66 HIGHWAY", 830f, 1470f, streetPaint)
                 }
 
                 // ----------------------------------------------------
-                // 7. ACTIVE NAVIGATION / WALKING ROUTE LINE
+                // 8. ACTIVE NAVIGATION ROUTE TO SELECTED GYM
                 // ----------------------------------------------------
                 selectedGym?.id?.let { gymId ->
                     val gymCoord = gymCoordinates[gymId]
                     if (gymCoord != null) {
                         val routePath = Path().apply {
                             moveTo(userVirtualX, userVirtualY)
-                            // Cornered realistic street path
                             val midX = userVirtualX
                             val midY = gymCoord.y
                             lineTo(midX, midY)
@@ -1245,30 +1375,23 @@ private fun DarkLeafletMapView(
                 }
 
                 // ----------------------------------------------------
-                // 8. USER LOCATION PULSING RADAR PIN
+                // 9. USER LOCATION PULSING GPS RADAR
                 // ----------------------------------------------------
-                // Expanding Radar Wave
                 drawCircle(
                     color = Color(0xFFFFFFFF).copy(alpha = radarPulseAlpha),
                     radius = radarPulseRadius,
                     center = Offset(userVirtualX, userVirtualY)
                 )
-
-                // Outer aura ring
                 drawCircle(
                     color = Color(0x33FFFFFF),
                     radius = 18f,
                     center = Offset(userVirtualX, userVirtualY)
                 )
-
-                // Dark border ring
                 drawCircle(
                     color = Color(0xFF191819),
                     radius = 9f,
                     center = Offset(userVirtualX, userVirtualY)
                 )
-
-                // Pure White center GPS core
                 drawCircle(
                     color = Color(0xFFFFFFFF),
                     radius = 6.5f,
@@ -1278,10 +1401,10 @@ private fun DarkLeafletMapView(
         }
 
         // ----------------------------------------------------
-        // 9. INTERACTIVE COMPOSABLE GYM PINS & BADGES
+        // 10. INTERACTIVE BYCE KETTLEBELL GYM PIN BADGES
         // ----------------------------------------------------
         gyms.forEach { gym ->
-            val coord = gymCoordinates[gym.id] ?: Offset(800f, 800f)
+            val coord = gymCoordinates[gym.id] ?: Offset(615f, 680f)
             val isSelected = (gym.id == selectedGym?.id)
 
             // Convert virtual coordinates to screen space
@@ -1293,8 +1416,8 @@ private fun DarkLeafletMapView(
 
             Box(
                 modifier = Modifier
-                    .offset(x = pinXDp - 65.dp, y = pinYDp - 60.dp)
-                    .width(130.dp)
+                    .offset(x = pinXDp - 70.dp, y = pinYDp - 68.dp)
+                    .width(140.dp)
                     .clickable { onGymClicked(gym.id) },
                 contentAlignment = Alignment.Center
             ) {
@@ -1302,16 +1425,16 @@ private fun DarkLeafletMapView(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable { onGymClicked(gym.id) }
                 ) {
-                    // Floating Badge Pill
+                    // Floating Badge Pill with BYCE branding & distance
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(50.dp))
                             .background(
-                                if (isSelected) Color(0xFF222123) else Color(0xEB1E1D1F)
+                                if (isSelected) Color(0xFF1C1C1F) else Color(0xEB1E1D1F)
                             )
                             .border(
                                 width = if (isSelected) 1.5.dp else 1.dp,
-                                color = if (isSelected) Color(0x80FFFFFF) else Color(0x33FFFFFF),
+                                color = if (isSelected) NeonGreen else Color(0x33FFFFFF),
                                 shape = RoundedCornerShape(50.dp)
                             )
                             .padding(horizontal = 9.dp, vertical = 4.dp)
@@ -1329,7 +1452,7 @@ private fun DarkLeafletMapView(
                             )
                             Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                text = gym.name.take(13),
+                                text = gym.name.replace(" (BYCE Elite)", "").take(14),
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = Color(0xFFFFFFFF),
@@ -1340,24 +1463,26 @@ private fun DarkLeafletMapView(
 
                     Spacer(modifier = Modifier.height(3.dp))
 
-                    // Marker Pin Circle
+                    // Kettlebell Pin Logo Icon Box
                     Box(
                         modifier = Modifier
-                            .size(if (isSelected) 36.dp else 30.dp)
+                            .size(if (isSelected) 40.dp else 34.dp)
                             .clip(CircleShape)
-                            .background(
-                                if (isSelected) Color(0xFF2C2A2D) else Color(0xFF222123)
-                            )
+                            .background(Color(0xFF181719))
                             .border(
                                 width = if (isSelected) 2.dp else 1.5.dp,
-                                color = if (isSelected) Color(0xFFFFFFFF) else Color(0xB3FFFFFF),
+                                color = if (isSelected) NeonGreen else Color(0x80FFFFFF),
                                 shape = CircleShape
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "🏋️",
-                            fontSize = if (isSelected) 16.sp else 13.sp
+                        Image(
+                            painter = painterResource(id = R.drawable.byce_kettlebell_pin),
+                            contentDescription = "BYCE Logo Pin",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(if (isSelected) 36.dp else 30.dp)
+                                .clip(CircleShape)
                         )
                     }
                 }
