@@ -80,7 +80,6 @@ fun OwnerSettingsScreen(
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
                         .background(if (isSelected) Color(0x35FFFFFF) else Color(0x15FFFFFF))
-                        .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(12.dp))
                         .clickable { selectedSection = sec }
                         .padding(vertical = 8.dp),
                     contentAlignment = Alignment.Center
@@ -113,8 +112,7 @@ fun OwnerSettingsScreen(
                                 modifier = Modifier
                                     .size(54.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0x28FFFFFF))
-                                    .border(1.dp, GlassBorderSpecular, CircleShape),
+                                    .background(Color(0x28FFFFFF)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
@@ -332,7 +330,6 @@ fun OwnerSettingsScreen(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
                 .background(StatusExpiredRedBg)
-                .border(1.dp, StatusExpiredRed.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
                 .clickable { onLogoutClick() }
                 .padding(vertical = 14.dp),
             contentAlignment = Alignment.Center

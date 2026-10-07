@@ -48,6 +48,7 @@ enum class OwnerScreenRoute(val title: String) {
 @Composable
 fun GymOwnerMainScreen(
     onLogout: () -> Unit = {},
+    onSwitchToMemberApp: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var currentRoute by remember { mutableStateOf(OwnerScreenRoute.DASHBOARD) }
@@ -162,7 +163,8 @@ fun GymOwnerMainScreen(
                             }
                         },
                         onClose = { isDrawerOpen = false },
-                        onLogout = onLogout
+                        onLogout = onLogout,
+                        onSwitchToMemberApp = onSwitchToMemberApp
                     )
                 }
             }

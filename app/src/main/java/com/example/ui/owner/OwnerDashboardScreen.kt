@@ -113,7 +113,6 @@ fun OwnerDashboardScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0x20FFFFFF))
-                                .border(1.dp, GlassBorderLight, RoundedCornerShape(12.dp))
                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
                             Text(
@@ -159,13 +158,6 @@ fun OwnerDashboardScreen(
                                     Color(0x2238BDF8)
                                 )
                             )
-                        )
-                        .border(
-                            1.dp,
-                            Brush.horizontalGradient(
-                                listOf(Color(0x9910B981), Color(0x4038BDF8))
-                            ),
-                            RoundedCornerShape(22.dp)
                         )
                         .padding(18.dp)
                 ) {
@@ -243,7 +235,6 @@ fun OwnerDashboardScreen(
                             modifier = Modifier
                                 .clip(CircleShape)
                                 .background(Color(0x33FFFFFF))
-                                .border(1.dp, GlassBorderSpecular, CircleShape)
                                 .padding(10.dp)
                         ) {
                             Icon(
@@ -609,7 +600,6 @@ fun OwnerDashboardScreen(
                                 .weight(1f)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(if (isSelected) Color(0x35FFFFFF) else Color(0x12FFFFFF))
-                                .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(12.dp))
                                 .clickable { selectedRevenueFilter = tab }
                                 .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center
@@ -748,7 +738,6 @@ fun OwnerDashboardScreen(
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
                         .background(if (isSelected) Color(0x35FFFFFF) else Color(0x12FFFFFF))
-                        .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(12.dp))
                         .clickable { selectedExpiryFilter = days }
                         .padding(vertical = 8.dp),
                     contentAlignment = Alignment.Center
@@ -793,7 +782,6 @@ fun OwnerDashboardScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(Color(0x28FFFFFF))
-                                .border(1.dp, GlassBorderSpecular, RoundedCornerShape(10.dp))
                                 .clickable { onNavigateToMemberships() }
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
@@ -1050,7 +1038,6 @@ fun OwnerDashboardScreen(
                     colors = listOf(Color(0xFF10B981), Color(0xFF059669))
                 )
             )
-            .border(1.5.dp, Color(0x60FFFFFF), RoundedCornerShape(22.dp))
             .clickable { showQrScannerModal = true }
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
@@ -1176,7 +1163,6 @@ private fun TodayOpsMetricBox(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
             .background(Color(0x18FFFFFF))
-            .border(1.dp, GlassBorderLight, RoundedCornerShape(14.dp))
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
             .padding(vertical = 12.dp, horizontal = 6.dp),
         contentAlignment = Alignment.Center

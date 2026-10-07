@@ -103,7 +103,6 @@ fun OwnerGymScreen(
                         .weight(1f)
                         .clip(RoundedCornerShape(14.dp))
                         .background(if (isSelected) Color(0x35FFFFFF) else Color(0x15FFFFFF))
-                        .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(14.dp))
                         .clickable { activeSubTab = tab }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center
@@ -167,7 +166,6 @@ fun OwnerGymScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0x28FFFFFF))
-                                .border(1.dp, GlassBorderSpecular, RoundedCornerShape(12.dp))
                                 .clickable { showStatusDialog = true }
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
@@ -244,7 +242,6 @@ fun OwnerGymScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0x28FFFFFF))
-                                .border(1.dp, GlassBorderSpecular, RoundedCornerShape(12.dp))
                                 .clickable { showEditDialog = true }
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
@@ -410,8 +407,7 @@ fun OwnerGymScreen(
                                 Brush.verticalGradient(
                                     colors = listOf(Color(0xFF14241E), Color(0xFF0F1A15))
                                 )
-                            )
-                            .border(1.dp, GlassBorderLight, RoundedCornerShape(18.dp)),
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         // Simulated Dark Map Grid Lines
@@ -432,8 +428,7 @@ fun OwnerGymScreen(
                                 modifier = Modifier
                                     .size(46.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0x30FFFFFF))
-                                    .border(1.dp, GlassBorderSpecular, CircleShape),
+                                    .background(Color(0x30FFFFFF)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -448,7 +443,6 @@ fun OwnerGymScreen(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(DarkNavyDepth)
-                                    .border(0.5.dp, GlassBorderLight, RoundedCornerShape(10.dp))
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
                                 Text(
@@ -605,7 +599,6 @@ fun OwnerGymScreen(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0x2534D399))
-                                .border(1.dp, StatusActiveGreen.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .padding(10.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -624,7 +617,6 @@ fun OwnerGymScreen(
                                 .weight(1f)
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(Color(0x28FFFFFF))
-                                .border(1.dp, GlassBorderSpecular, RoundedCornerShape(14.dp))
                                 .clickable {
                                     qrActionNotice = "✓ Printable QR PDF generated for front desk standee."
                                     GymOwnerRepository.logAdminAction("Kishore Kumar", "Generated printable QR display", "Gym QR")
@@ -644,7 +636,6 @@ fun OwnerGymScreen(
                                 .weight(1f)
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(Color(0x28FFFFFF))
-                                .border(1.dp, GlassBorderSpecular, RoundedCornerShape(14.dp))
                                 .clickable {
                                     qrActionNotice = "✓ High-res QR graphic downloaded to device storage."
                                     GymOwnerRepository.logAdminAction("Kishore Kumar", "Downloaded QR UI graphic", "Gym QR")
@@ -667,7 +658,6 @@ fun OwnerGymScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color(0x18FFFFFF))
-                            .border(1.dp, GlassBorderLight, RoundedCornerShape(14.dp))
                             .clickable { showRegenerateQrDialog = true }
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
@@ -760,7 +750,6 @@ private fun ChangeOperatingStatusDialog(
                             .padding(vertical = 4.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(if (isSelected) Color(0x35FFFFFF) else Color(0x15FFFFFF))
-                            .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(12.dp))
                             .clickable { selected = statusOption }
                             .padding(14.dp)
                     ) {
@@ -783,7 +772,6 @@ private fun ChangeOperatingStatusDialog(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
                         .background(Color(0x35FFFFFF))
-                        .border(1.dp, GlassBorderSpecular, RoundedCornerShape(14.dp))
                         .clickable { onConfirm(selected) }
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
@@ -837,7 +825,6 @@ private fun RegenerateQrConfirmDialog(
                         .weight(1f)
                         .clip(RoundedCornerShape(14.dp))
                         .background(StatusExpiredRedBg)
-                        .border(1.dp, StatusExpiredRed.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
                         .clickable { onConfirm() }
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center

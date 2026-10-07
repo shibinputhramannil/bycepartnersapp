@@ -304,7 +304,6 @@ fun OwnerQrScannerModal(
                             .size(42.dp)
                             .clip(CircleShape)
                             .background(Color(0x77000000))
-                            .border(1.dp, GlassBorderLight, CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -319,7 +318,6 @@ fun OwnerQrScannerModal(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
                             .background(Color(0x88000000))
-                            .border(1.dp, GlassBorderLight, RoundedCornerShape(20.dp))
                             .padding(horizontal = 14.dp, vertical = 6.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -350,7 +348,6 @@ fun OwnerQrScannerModal(
                                 .size(42.dp)
                                 .clip(CircleShape)
                                 .background(if (isTorchOn) StatusActiveGreen else Color(0x77000000))
-                                .border(1.dp, GlassBorderLight, CircleShape)
                         ) {
                             Icon(
                                 imageVector = if (isTorchOn) Icons.Default.FlashOn else Icons.Default.FlashOff,
@@ -369,7 +366,6 @@ fun OwnerQrScannerModal(
                                 .size(42.dp)
                                 .clip(CircleShape)
                                 .background(Color(0x77000000))
-                                .border(1.dp, GlassBorderLight, CircleShape)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.FlipCameraAndroid,
@@ -412,7 +408,6 @@ fun OwnerQrScannerModal(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
                         .background(Color(0xCC111827))
-                        .border(1.dp, GlassBorderLight, RoundedCornerShape(16.dp))
                         .padding(12.dp)
                 ) {
                     Column {
@@ -513,7 +508,6 @@ fun OwnerQrScannerModal(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
                         .background(Color(0xDD1E293B))
-                        .border(1.dp, GlassBorderLight, RoundedCornerShape(14.dp))
                         .clickable { showManualInputDialog = true }
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
@@ -600,7 +594,6 @@ fun OwnerQrScannerModal(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
                             .background(Color(0x2210B981))
-                            .border(1.dp, Color(0xFF10B981), RoundedCornerShape(12.dp))
                             .padding(12.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -672,7 +665,6 @@ fun OwnerQrScannerModal(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
                         .background(Color(0xFF1E242B))
-                        .border(1.dp, GlassBorderLight, RoundedCornerShape(14.dp))
                         .padding(16.dp)
                 ) {
                     Column {
@@ -722,7 +714,6 @@ fun OwnerQrScannerModal(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
                             .background(Color(0xFF0D1117))
-                            .border(1.dp, Color(0x30FFFFFF), RoundedCornerShape(10.dp))
                             .padding(10.dp)
                     ) {
                         Row(
@@ -1091,7 +1082,6 @@ private fun QuickTestCodeChip(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0x33FFFFFF))
-            .border(1.dp, GlassBorderLight, RoundedCornerShape(8.dp))
             .clickable { onClick() }
             .padding(vertical = 6.dp),
         contentAlignment = Alignment.Center

@@ -101,7 +101,6 @@ fun OwnerPaymentsScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color(0x20FFFFFF))
-                            .border(1.dp, GlassBorderLight, RoundedCornerShape(14.dp))
                             .clickable { showExportDialog = true }
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
@@ -141,7 +140,6 @@ fun OwnerPaymentsScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
                             .background(StatusActiveGreenBg)
-                            .border(1.dp, StatusActiveGreen.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                             .padding(12.dp)
                     ) {
                         Row(
@@ -373,7 +371,6 @@ private fun PendingPaymentCardRow(
                                     colors = listOf(StatusActiveGreen.copy(alpha = 0.3f), StatusActiveGreen.copy(alpha = 0.15f))
                                 )
                             )
-                            .border(1.dp, StatusActiveGreen.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
                             .clickable { onRecordPayment() }
                             .padding(horizontal = 10.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center
@@ -434,7 +431,6 @@ private fun RecordPaymentConfirmDialog(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(OwnerModalSurfaceElevated)
-                    .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(14.dp))
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
                     ReceiptRow("Member", item.customerName)
@@ -651,7 +647,6 @@ private fun PaymentDetailModal(
                             colors = listOf(Color(0x35FFFFFF), Color(0x20FFFFFF))
                         )
                     )
-                    .border(1.dp, GlassBorderSpecular, RoundedCornerShape(16.dp))
                     .clickable { onDismiss() }
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center

@@ -105,7 +105,6 @@ fun OwnerBookingsScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color(0x20FFFFFF))
-                            .border(1.dp, GlassBorderLight, RoundedCornerShape(14.dp))
                             .clickable { showExportDialog = true }
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
@@ -126,7 +125,6 @@ fun OwnerBookingsScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
                             .background(StatusActiveGreenBg)
-                            .border(1.dp, StatusActiveGreen.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                             .padding(12.dp)
                     ) {
                         Row(
@@ -165,8 +163,7 @@ fun OwnerBookingsScreen(
                                     modifier = Modifier
                                         .size(34.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFFEA4335).copy(alpha = 0.18f))
-                                        .border(1.dp, Color(0xFFEA4335).copy(alpha = 0.4f), CircleShape),
+                                        .background(Color(0xFFEA4335).copy(alpha = 0.18f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -198,7 +195,6 @@ fun OwnerBookingsScreen(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(20.dp))
                                     .background(StatusActiveGreenBg)
-                                    .border(1.dp, StatusActiveGreen.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
                                     .padding(horizontal = 8.dp, vertical = 3.dp)
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -290,7 +286,6 @@ fun OwnerBookingsScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(if (isSelected) color.copy(alpha = 0.25f) else Color(0x18FFFFFF))
-                                .border(1.dp, if (isSelected) color.copy(alpha = 0.8f) else Color.Transparent, RoundedCornerShape(12.dp))
                                 .clickable { selectedShiftFilter = shift }
                                 .padding(horizontal = 12.dp, vertical = 7.dp)
                         ) {
@@ -445,11 +440,6 @@ private fun ShiftScheduleMiniCard(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
             .background(if (isSelected) accentColor.copy(alpha = 0.22f) else Color(0x18FFFFFF))
-            .border(
-                1.dp,
-                if (isSelected) accentColor.copy(alpha = 0.8f) else Color(0x22FFFFFF),
-                RoundedCornerShape(14.dp)
-            )
             .clickable { onClick() }
             .padding(10.dp)
     ) {
@@ -593,11 +583,6 @@ private fun BookingRowCard(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(if (booking.reminderStatus.contains("Sent", ignoreCase = true)) StatusActiveGreenBg else Color(0x22EA4335))
-                        .border(
-                            1.dp,
-                            if (booking.reminderStatus.contains("Sent", ignoreCase = true)) StatusActiveGreen.copy(alpha = 0.5f) else Color(0x66EA4335),
-                            RoundedCornerShape(8.dp)
-                        )
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -631,7 +616,6 @@ private fun BookingRowCard(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color(0xFFEA4335).copy(alpha = 0.18f))
-                        .border(1.dp, Color(0xFFEA4335).copy(alpha = 0.45f), RoundedCornerShape(12.dp))
                         .clickable { onSendReminder() }
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
@@ -657,7 +641,6 @@ private fun BookingRowCard(
                                         colors = listOf(StatusActiveGreen.copy(alpha = 0.35f), StatusActiveGreen.copy(alpha = 0.15f))
                                     )
                                 )
-                                .border(1.dp, StatusActiveGreen.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
                                 .clickable { onMarkArrived() }
                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
@@ -822,7 +805,6 @@ private fun BookingDetailModal(
                             .weight(1f)
                             .clip(RoundedCornerShape(10.dp))
                             .background(if (isCurrent) color.copy(alpha = 0.25f) else Color(0x18FFFFFF))
-                            .border(1.dp, if (isCurrent) color else Color(0x22FFFFFF), RoundedCornerShape(10.dp))
                             .clickable {
                                 selectedShift = shiftOption
                                 onUpdateShift(shiftOption)
@@ -850,7 +832,6 @@ private fun BookingDetailModal(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(OwnerModalSurfaceElevated)
-                    .border(1.dp, Color(0xFFEA4335).copy(alpha = 0.35f), RoundedCornerShape(14.dp))
                     .padding(14.dp)
             ) {
                 Column {
@@ -928,7 +909,6 @@ private fun BookingDetailModal(
                                 colors = listOf(StatusActiveGreen.copy(alpha = 0.35f), StatusActiveGreen.copy(alpha = 0.15f))
                             )
                         )
-                        .border(1.dp, StatusActiveGreen.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
                         .clickable { onMarkArrived() }
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
@@ -944,7 +924,6 @@ private fun BookingDetailModal(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
                         .background(StatusExpiredRedBg)
-                        .border(1.dp, StatusExpiredRed.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
                         .clickable { onCancelBooking() }
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
@@ -959,7 +938,6 @@ private fun BookingDetailModal(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(Color(0x22FFFFFF))
-                    .border(1.dp, GlassBorderSpecular, RoundedCornerShape(14.dp))
                     .clickable { onDismiss() }
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center

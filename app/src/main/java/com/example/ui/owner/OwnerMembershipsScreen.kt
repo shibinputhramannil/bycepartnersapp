@@ -89,7 +89,6 @@ fun OwnerMembershipsScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color(0x20FFFFFF))
-                            .border(1.dp, GlassBorderLight, RoundedCornerShape(14.dp))
                             .clickable { showExportDialog = true }
                             .padding(horizontal = 12.dp, vertical = 8.dp)
                     ) {
@@ -146,7 +145,6 @@ fun OwnerMembershipsScreen(
                                     .weight(1f)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(if (isSelected) Color(0x35FFFFFF) else Color(0x12FFFFFF))
-                                    .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(12.dp))
                                     .clickable { expiringDaysFilter = days }
                                     .padding(vertical = 7.dp),
                                 contentAlignment = Alignment.Center
@@ -290,7 +288,6 @@ private fun ExpiringMembershipCardItem(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(StatusPendingAmberBg)
-                        .border(1.dp, StatusPendingAmber.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(text = "${item.daysRemaining} days left", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusPendingAmber)
@@ -311,7 +308,6 @@ private fun ExpiringMembershipCardItem(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
                         .background(Color(0x28FFFFFF))
-                        .border(1.dp, GlassBorderSpecular, RoundedCornerShape(10.dp))
                         .clickable { onViewClick() }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {

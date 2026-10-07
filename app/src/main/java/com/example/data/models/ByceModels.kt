@@ -112,7 +112,7 @@ data class MembershipItem(
 )
 
 /**
- * Membership Plan Tier
+ * Membership Plan Tier (Cult-inspired 5 Tiers)
  */
 data class MembershipPlanItem(
     val id: String,
@@ -123,7 +123,44 @@ data class MembershipPlanItem(
     val price: Double,
     val discountPrice: Double? = null,
     val features: List<String>,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val tierLevel: String = "Tier 1", // Tier 1 (All-Access Elite), Tier 2 (Standard Pro), etc.
+    val accessScope: String = "All Partner & Elite Centers",
+    val groupClassesQuota: String = "Unlimited",
+    val pauseDaysAllowed: Int = 30,
+    val isPopular: Boolean = false,
+    val monthlyPrice: Double = price,
+    val quarterlyPrice: Double = price * 2.6,
+    val annualPrice: Double = price * 8.0
+)
+
+/**
+ * Free Trial Session Booking Model (2 Free Sessions)
+ */
+data class FreeTrialSession(
+    val id: String,
+    val centerName: String,
+    val sessionType: String, // Boxing, Strength, Dance, Yoga
+    val trainerName: String,
+    val date: String,
+    val timeSlot: String,
+    val intensity: String = "High",
+    val creditsDeducted: Int = 1,
+    val status: String = "Booked" // Booked, Completed, Cancelled
+)
+
+/**
+ * Membership Pause / Freeze Engine
+ */
+data class MembershipFreezeRecord(
+    val id: String,
+    val planName: String,
+    val startDate: String,
+    val endDate: String,
+    val pauseDaysUsed: Int,
+    val pauseDaysRemaining: Int,
+    val reason: String,
+    val status: String = "Active"
 )
 
 /**

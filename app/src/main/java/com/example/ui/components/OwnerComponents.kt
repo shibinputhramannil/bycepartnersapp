@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
@@ -161,7 +162,6 @@ fun OwnerHeader(
                                     colors = listOf(Color(0x35FFFFFF), Color(0x18FFFFFF))
                                 )
                             )
-                            .border(1.dp, GlassBorderSpecular, CircleShape)
                             .clickable { onProfileClick() },
                         contentAlignment = Alignment.Center
                     ) {
@@ -318,7 +318,6 @@ fun OwnerStatusBadge(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(bgColor)
-            .border(0.5.dp, textColor.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
             .padding(horizontal = 8.dp, vertical = 3.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -361,7 +360,6 @@ fun OwnerSearchBar(
                 .height(44.dp)
                 .clip(RoundedCornerShape(22.dp))
                 .background(Color(0x18FFFFFF))
-                .border(1.dp, GlassBorderLight, RoundedCornerShape(22.dp))
                 .padding(horizontal = 14.dp),
             contentAlignment = Alignment.CenterStart
         ) {
@@ -425,11 +423,6 @@ fun OwnerSearchBar(
                         modifier = Modifier
                             .clip(RoundedCornerShape(16.dp))
                             .background(if (isSelected) Color(0x35FFFFFF) else Color(0x12FFFFFF))
-                            .border(
-                                1.dp,
-                                if (isSelected) GlassBorderSpecular else GlassBorderLight,
-                                RoundedCornerShape(16.dp)
-                            )
                             .clickable { onFilterSelected(option) }
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
@@ -598,7 +591,6 @@ fun OwnerErrorState(
                 modifier = Modifier
                     .clip(RoundedCornerShape(18.dp))
                     .background(Color(0x35FFFFFF))
-                    .border(1.dp, GlassBorderSpecular, RoundedCornerShape(18.dp))
                     .clickable { onRetry() }
                     .padding(horizontal = 20.dp, vertical = 8.dp)
             ) {
@@ -627,7 +619,8 @@ fun OwnerNavigationDrawerSheet(
     currentScreenName: String,
     onNavigate: (String) -> Unit,
     onClose: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onSwitchToMemberApp: () -> Unit = {}
 ) {
     val navItems = listOf(
         OwnerNavItem("Dashboard", Icons.Default.Dashboard),
@@ -651,7 +644,6 @@ fun OwnerNavigationDrawerSheet(
             .fillMaxHeight()
             .width(300.dp)
             .background(DarkNavyDepth)
-            .border(1.dp, GlassBorderLight)
             .padding(horizontal = 16.dp, vertical = 24.dp)
     ) {
         Column(
@@ -760,7 +752,50 @@ fun OwnerNavigationDrawerSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Switch to Member App (5 Tiers & Trials)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0x25FFFFFF))
+                    .clickable {
+                        onClose()
+                        onSwitchToMemberApp()
+                    }
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.DirectionsRun,
+                    contentDescription = "Member App Mode",
+                    tint = NeonGreen,
+                    modifier = Modifier.size(19.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Member App Mode",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextWhite
+                    )
+                    Text(
+                        text = "5 Tiers & Free Trials",
+                        fontSize = 10.sp,
+                        color = ByceCoolGray
+                    )
+                }
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                    tint = NeonGreen,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Logout Option
             Row(
@@ -812,17 +847,6 @@ fun OwnerModalCard(
             )
             .clip(shape)
             .background(OwnerModalSurface)
-            .border(
-                width = 1.dp,
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0x40FFFFFF),
-                        Color(0x18FFFFFF),
-                        Color(0x0CFFFFFF)
-                    )
-                ),
-                shape = shape
-            )
     ) {
         content()
     }

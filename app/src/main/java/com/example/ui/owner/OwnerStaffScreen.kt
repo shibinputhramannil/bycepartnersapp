@@ -217,7 +217,6 @@ private fun StaffRowCard(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .background(if (staff.status == "Active") StatusExpiredRedBg else StatusActiveGreenBg)
-                        .border(1.dp, if (staff.status == "Active") StatusExpiredRed.copy(alpha = 0.5f) else StatusActiveGreen.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
                         .clickable { onToggleStatus() }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
@@ -281,7 +280,6 @@ private fun AddStaffDialog(
                             .weight(1f)
                             .clip(RoundedCornerShape(12.dp))
                             .background(if (isSelected) Color(0x35FFFFFF) else Color(0x18FFFFFF))
-                            .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(12.dp))
                             .clickable { role = r }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center

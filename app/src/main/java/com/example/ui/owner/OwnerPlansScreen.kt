@@ -70,7 +70,6 @@ fun OwnerPlansScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(18.dp))
                             .background(Color(0x35FFFFFF))
-                            .border(1.dp, GlassBorderSpecular, RoundedCornerShape(18.dp))
                             .clickable { showCreateDialog = true }
                             .padding(horizontal = 14.dp, vertical = 8.dp)
                     ) {
@@ -163,17 +162,25 @@ private fun PlanCard(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = plan.name,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextWhite
+                            text = plan.tierLevel,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = NeonGreen,
+                            letterSpacing = 0.5.sp
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         OwnerStatusBadge(status = if (plan.isActive) "Active" else "Inactive")
                     }
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = plan.description,
+                        text = plan.name,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextWhite
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "${plan.accessScope} · ${plan.description}",
                         fontSize = 12.sp,
                         color = ByceCoolGray,
                         maxLines = 2
@@ -253,7 +260,6 @@ private fun PlanCard(
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
                         .background(if (plan.isActive) StatusExpiredRedBg else StatusActiveGreenBg)
-                        .border(1.dp, if (plan.isActive) StatusExpiredRed.copy(alpha = 0.5f) else StatusActiveGreen.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
                         .clickable { onToggleActive() }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center

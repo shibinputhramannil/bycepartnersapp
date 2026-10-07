@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -43,6 +44,7 @@ import com.example.ui.theme.ByceGreen
 import com.example.ui.theme.DarkNavy
 import com.example.ui.theme.GlassBorderLight
 import com.example.ui.theme.GlassSurfaceMedium
+import com.example.ui.theme.NeonGreen
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextSubtle
 import com.example.ui.theme.TextWhite
@@ -54,6 +56,7 @@ import com.example.ui.theme.TextWhite
 fun ProfileScreen(
     onBackClick: () -> Unit = {},
     onLogOutClick: () -> Unit = {},
+    onSwitchToOwnerPortal: () -> Unit = {},
     onTabSelected: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -185,7 +188,36 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Logout button (Clean text button without icon or background)
+            // Switch to Gym Owner Portal
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0x25FFFFFF))
+                    .clickable { onSwitchToOwnerPortal() }
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Dashboard,
+                        contentDescription = null,
+                        tint = NeonGreen,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Switch to Gym Owner Portal",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextWhite
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Logout button
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -44,50 +44,139 @@ object GymOwnerRepository {
 
     private val samplePlans = mutableListOf(
         MembershipPlanItem(
-            id = "plan_1",
-            name = "Monthly",
-            description = "Standard 1-month full gym floor access with locker facility",
+            id = "plan_elite_1",
+            name = "All-Access Elite",
+            description = "Unlimited access to premium group classes (Dance, Boxing, Strength, Yoga), all premium gyms city-wide & digital home content.",
+            duration = 1,
+            durationUnit = "Month",
+            price = 1999.0,
+            discountPrice = null,
+            features = listOf(
+                "Unlimited Elite group classes (Boxing, Dance, Yoga, Strength)",
+                "Access to all premium & partner gyms city-wide",
+                "Full Digital Suite (Live + On-Demand + Meditation)",
+                "2 Free Guest Passes / month",
+                "Up to 45 days membership pause allowance",
+                "Priority 4-day advance slot booking"
+            ),
+            isActive = true,
+            tierLevel = "Tier 1: All-Access Elite",
+            accessScope = "All City-Wide Elite Centers & Gyms",
+            groupClassesQuota = "Unlimited",
+            pauseDaysAllowed = 45,
+            isPopular = true,
+            monthlyPrice = 1999.0,
+            quarterlyPrice = 4999.0,
+            annualPrice = 14999.0
+        ),
+        MembershipPlanItem(
+            id = "plan_pro_2",
+            name = "Standard Pro",
+            description = "Unlimited standard partner gyms, at-home digital content, and 2 monthly visits to Elite group classes.",
+            duration = 1,
+            durationUnit = "Month",
+            price = 1299.0,
+            discountPrice = null,
+            features = listOf(
+                "Unlimited standard partner gym floor access",
+                "2 Elite group class visits / month included",
+                "Full Digital & At-Home workout library",
+                "1 Free Guest Pass / month",
+                "Up to 30 days membership pause allowance"
+            ),
+            isActive = true,
+            tierLevel = "Tier 2: Standard Pro",
+            accessScope = "Unlimited Partner Gyms + 2 Elite/mo",
+            groupClassesQuota = "2 visits / month",
+            pauseDaysAllowed = 30,
+            isPopular = false,
+            monthlyPrice = 1299.0,
+            quarterlyPrice = 3299.0,
+            annualPrice = 9999.0
+        ),
+        MembershipPlanItem(
+            id = "plan_select_3",
+            name = "Single-Center Select",
+            description = "Unlimited access to one specific physical gym or center of choice at high value.",
+            duration = 1,
+            durationUnit = "Month",
+            price = 899.0,
+            discountPrice = null,
+            features = listOf(
+                "Unlimited access to Iron House Fitness (Home Gym)",
+                "Full strength & cardio floor access",
+                "Locker & shower facilities included",
+                "Up to 20 days membership pause allowance"
+            ),
+            isActive = true,
+            tierLevel = "Tier 3: Single-Center Select",
+            accessScope = "Single Home Gym (Iron House Fitness)",
+            groupClassesQuota = "Add-on session passes available",
+            pauseDaysAllowed = 20,
+            isPopular = false,
+            monthlyPrice = 899.0,
+            quarterlyPrice = 2399.0,
+            annualPrice = 6999.0
+        ),
+        MembershipPlanItem(
+            id = "plan_digital_4",
+            name = "Digital / At-Home",
+            description = "Purely digital subscription with unlimited live-streamed sessions, on-demand videos, and mental wellness & meditation.",
+            duration = 1,
+            durationUnit = "Month",
+            price = 399.0,
+            discountPrice = null,
+            features = listOf(
+                "Unlimited daily live interactive workout streams",
+                "500+ on-demand yoga, HIIT, and strength routines",
+                "Guided mental wellness & sleep meditation library",
+                "Apple Health & Smartwatch calorie sync",
+                "Up to 15 days membership pause allowance"
+            ),
+            isActive = true,
+            tierLevel = "Tier 4: Digital At-Home",
+            accessScope = "Anywhere (Mobile / Smart TV)",
+            groupClassesQuota = "Unlimited Live Streams",
+            pauseDaysAllowed = 15,
+            isPopular = false,
+            monthlyPrice = 399.0,
+            quarterlyPrice = 999.0,
+            annualPrice = 2999.0
+        ),
+        MembershipPlanItem(
+            id = "plan_coaching_5",
+            name = "Coaching & Nutrition",
+            description = "Dedicated 1-on-1 certified online coach, personalized meal planning, and regular progress check-ins.",
             duration = 1,
             durationUnit = "Month",
             price = 1499.0,
             discountPrice = null,
-            features = listOf("Full gym floor access", "Locker access", "App check-in pass", "Shower facility"),
-            isActive = true
-        ),
-        MembershipPlanItem(
-            id = "plan_2",
-            name = "Quarterly",
-            description = "3-month progressive training pass with complimentary fitness assessment",
-            duration = 3,
-            durationUnit = "Months",
-            price = 3999.0,
-            discountPrice = 3799.0,
-            features = listOf("All Monthly features", "1 Fitness assessment", "Diet guidance sheet", "Guest pass (1x)"),
-            isActive = true
-        ),
-        MembershipPlanItem(
-            id = "plan_3",
-            name = "Half Yearly",
-            description = "6-month dedicated fitness membership with free steam and recovery sessions",
-            duration = 6,
-            durationUnit = "Months",
-            price = 6999.0,
-            discountPrice = 6499.0,
-            features = listOf("All Quarterly features", "Steam bath access", "2 Body composition tests", "2 Guest passes"),
-            isActive = true
-        ),
-        MembershipPlanItem(
-            id = "plan_4",
-            name = "Yearly",
-            description = "Ultimate 12-month transformation membership with maximum savings",
-            duration = 12,
-            durationUnit = "Months",
-            price = 11999.0,
-            discountPrice = 10999.0,
-            features = listOf("All Half Yearly features", "Priority slot booking", "Free BYCE gym kit", "Unlimited guest passes (1/mo)"),
-            isActive = true
+            features = listOf(
+                "Dedicated certified fitness & nutrition coach",
+                "Customized weekly macro & Indian meal plans",
+                "Weekly 1-on-1 video accountability check-in",
+                "WhatsApp direct coach chat support",
+                "Up to 14 days pause allowance"
+            ),
+            isActive = true,
+            tierLevel = "Tier 5: Coaching & Nutrition",
+            accessScope = "1-on-1 Dedicated Coach & App",
+            groupClassesQuota = "Included Workout Guidance",
+            pauseDaysAllowed = 14,
+            isPopular = false,
+            monthlyPrice = 1499.0,
+            quarterlyPrice = 3899.0,
+            annualPrice = 11999.0
         )
     )
+
+    private val sampleTrialSessions = mutableListOf(
+        FreeTrialSession("tr_1", "Iron House Fitness", "Boxing & Cardio Kick", "Coach Vicky", "Tomorrow", "07:00 AM - 08:00 AM", "High", 1, "Available"),
+        FreeTrialSession("tr_2", "Iron House Fitness", "Strength & Conditioning", "Coach Ramesh", "Tomorrow", "06:00 PM - 07:00 PM", "High", 1, "Available"),
+        FreeTrialSession("tr_3", "Iron House Fitness", "Dance Fitness / Zumba", "Coach Anjali", "Friday", "05:30 PM - 06:30 PM", "Medium", 1, "Available"),
+        FreeTrialSession("tr_4", "Iron House Fitness", "Power Yoga & Flow", "Coach Priya", "Saturday", "08:00 AM - 09:00 AM", "Low", 1, "Available")
+    )
+    private var freeTrialCredits = 2
 
     private val sampleCustomers = mutableListOf(
         CustomerItem("c1", "Rahul Menon", "rahul.menon@gmail.com", "+91 98471 22334", "Yearly", "10 Jan 2026", "09 Jan 2027", "Active", "10 Jan 2025", "RM"),
@@ -319,6 +408,82 @@ object GymOwnerRepository {
             val p = samplePlans[index]
             samplePlans[index] = p.copy(isActive = !p.isActive)
         }
+    }
+
+    // Free Trial Sessions Engine (2 Free Trial Credits)
+    fun getTrialSessions(): List<FreeTrialSession> = sampleTrialSessions
+
+    fun getFreeTrialCredits(): Int = freeTrialCredits
+
+    fun bookTrialSession(sessionId: String): Boolean {
+        val index = sampleTrialSessions.indexOfFirst { it.id == sessionId }
+        if (index != -1 && freeTrialCredits > 0) {
+            val session = sampleTrialSessions[index]
+            sampleTrialSessions[index] = session.copy(status = "Booked")
+            freeTrialCredits = (freeTrialCredits - 1).coerceAtLeast(0)
+
+            val newBooking = BookingItem(
+                id = "trial_${System.currentTimeMillis()}",
+                customerName = "Trial Member (Alex)",
+                customerPhone = "+91 98470 99887",
+                customerEmail = "alex.member@cultgym.com",
+                membershipPlan = "2-Session Free Trial (${session.sessionType})",
+                date = session.date,
+                time = session.timeSlot,
+                shift = if (session.timeSlot.contains("AM")) "Morning Shift" else "Evening Shift",
+                status = "Upcoming",
+                arrivalStatus = "Confirmed",
+                reminderMinutesBefore = 30,
+                reminderScheduled = true,
+                reminderDeliveryChannel = "Gmail",
+                reminderStatus = "Scheduled (30m before session via Gmail)"
+            )
+            sampleBookings.add(0, newBooking)
+
+            logAdminAction("System Engine", "Booked Free Trial session '${session.sessionType}' at ${session.timeSlot}. Credits remaining: $freeTrialCredits", "Bookings")
+            addNotification(
+                NotificationItem(
+                    id = "notif_trial_${System.currentTimeMillis()}",
+                    title = "Free Trial Session Confirmed",
+                    message = "Your ${session.sessionType} trial session is booked for ${session.date} (${session.timeSlot}). Dynamic check-in QR code is ready.",
+                    type = "Booking",
+                    timestamp = "Just now",
+                    isRead = false
+                )
+            )
+            return true
+        }
+        return false
+    }
+
+    private val sampleFreezes = mutableListOf(
+        MembershipFreezeRecord(
+            id = "frz_1",
+            planName = "All-Access Elite",
+            startDate = "15 Oct 2026",
+            endDate = "25 Oct 2026",
+            pauseDaysUsed = 10,
+            pauseDaysRemaining = 35,
+            reason = "Work Travel / Vacation",
+            status = "Scheduled"
+        )
+    )
+
+    fun getMembershipFreezes(): List<MembershipFreezeRecord> = sampleFreezes
+
+    fun requestMembershipFreeze(planName: String, startDate: String, endDate: String, days: Int, reason: String) {
+        val freeze = MembershipFreezeRecord(
+            id = "frz_${System.currentTimeMillis()}",
+            planName = planName,
+            startDate = startDate,
+            endDate = endDate,
+            pauseDaysUsed = days,
+            pauseDaysRemaining = (45 - days).coerceAtLeast(0),
+            reason = reason,
+            status = "Active"
+        )
+        sampleFreezes.add(0, freeze)
+        logAdminAction("Kishore Kumar", "Approved Membership freeze ($days days) from $startDate to $endDate for $planName", "Memberships")
     }
 
     // GET /api/v1/admin/payments/

@@ -104,7 +104,6 @@ fun OwnerNotificationsScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(if (isSelected) Color(0x35FFFFFF) else Color(0x15FFFFFF))
-                            .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(12.dp))
                             .clickable { selectedTypeFilter = type }
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center

@@ -115,7 +115,6 @@ fun OwnerAttendanceScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color(0x20FFFFFF))
-                            .border(1.dp, GlassBorderLight, RoundedCornerShape(14.dp))
                             .clickable { showExportDialog = true }
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
@@ -132,7 +131,6 @@ fun OwnerAttendanceScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color(0x35FFFFFF))
-                            .border(1.dp, GlassBorderSpecular, RoundedCornerShape(14.dp))
                             .clickable { showManualCheckInDialog = true }
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
@@ -504,7 +502,6 @@ private fun AttendanceRecordCard(
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
                             .background(Color(0x28FFFFFF))
-                            .border(1.dp, GlassBorderSpecular, RoundedCornerShape(10.dp))
                             .clickable { onCheckOut() }
                             .padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
@@ -579,9 +576,7 @@ private fun TodayCheckinsModal(
                         .fillMaxWidth()
                         .padding(vertical = 4.dp),
                     shape = RoundedCornerShape(14.dp),
-                    backgroundColor = OwnerModalSurfaceElevated,
-                    borderWidth = 1.dp,
-                    borderColor = Color(0x25FFFFFF)
+                    backgroundColor = OwnerModalSurfaceElevated
                 ) {
                     Row(
                         modifier = Modifier
@@ -619,7 +614,6 @@ private fun TodayCheckinsModal(
                                         colors = listOf(Color(0x3534D399), Color(0x2034D399))
                                     )
                                 )
-                                .border(1.dp, StatusActiveGreen.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
                                 .clickable { onSelectMemberQr(item) }
                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
@@ -640,7 +634,6 @@ private fun TodayCheckinsModal(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(Color(0x25FFFFFF))
-                    .border(1.dp, GlassBorderSpecular, RoundedCornerShape(14.dp))
                     .clickable { onDismiss() }
                     .padding(vertical = 11.dp),
                 contentAlignment = Alignment.Center
@@ -891,7 +884,6 @@ private fun CurrentlyInsideModal(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(10.dp))
                                         .background(Color(0x3034D399))
-                                        .border(1.dp, StatusActiveGreen.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                     ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -945,7 +937,6 @@ private fun CurrentlyInsideModal(
                                         .weight(1f)
                                         .clip(RoundedCornerShape(10.dp))
                                         .background(Color(0x28FFFFFF))
-                                        .border(1.dp, GlassBorderSpecular, RoundedCornerShape(10.dp))
                                         .clickable { onCheckOut(member.id) }
                                         .padding(vertical = 7.dp),
                                     contentAlignment = Alignment.Center
@@ -965,7 +956,6 @@ private fun CurrentlyInsideModal(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(Color(0x25FFFFFF))
-                    .border(1.dp, GlassBorderSpecular, RoundedCornerShape(14.dp))
                     .clickable { onDismiss() }
                     .padding(vertical = 11.dp),
                 contentAlignment = Alignment.Center
@@ -1021,9 +1011,7 @@ private fun CompletedVisitsModal(
                         .fillMaxWidth()
                         .padding(vertical = 4.dp),
                     shape = RoundedCornerShape(14.dp),
-                    backgroundColor = OwnerModalSurfaceElevated,
-                    borderWidth = 1.dp,
-                    borderColor = Color(0x25FFFFFF)
+                    backgroundColor = OwnerModalSurfaceElevated
                 ) {
                     Column(
                         modifier = Modifier
@@ -1079,7 +1067,6 @@ private fun CompletedVisitsModal(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(Color(0x25FFFFFF))
-                    .border(1.dp, GlassBorderSpecular, RoundedCornerShape(14.dp))
                     .clickable { onDismiss() }
                     .padding(vertical = 11.dp),
                 contentAlignment = Alignment.Center
@@ -1177,7 +1164,6 @@ private fun DailyVisitsAnalyticsModal(
                             .weight(1f)
                             .clip(RoundedCornerShape(10.dp))
                             .background(if (isSelected) Color(0x35FFFFFF) else Color(0x12FFFFFF))
-                            .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(10.dp))
                             .clickable { selectedSortTab = tab }
                             .padding(vertical = 7.dp),
                         contentAlignment = Alignment.Center
@@ -1198,9 +1184,7 @@ private fun DailyVisitsAnalyticsModal(
             LiquidGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                backgroundColor = OwnerModalSurfaceElevated,
-                borderWidth = 1.dp,
-                borderColor = Color(0x25FFFFFF)
+                backgroundColor = OwnerModalSurfaceElevated
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                     Row(
@@ -1272,9 +1256,7 @@ private fun DailyVisitsAnalyticsModal(
             LiquidGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
-                backgroundColor = OwnerModalSurfaceElevated,
-                borderWidth = 1.dp,
-                borderColor = Color(0x25FFFFFF)
+                backgroundColor = OwnerModalSurfaceElevated
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
                     DetailLine("Peak Workout Window", "06:00 PM - 08:30 PM (Evening Rush)")
@@ -1291,7 +1273,6 @@ private fun DailyVisitsAnalyticsModal(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(Color(0x25FFFFFF))
-                    .border(1.dp, GlassBorderSpecular, RoundedCornerShape(14.dp))
                     .clickable { onDismiss() }
                     .padding(vertical = 11.dp),
                 contentAlignment = Alignment.Center
@@ -1382,7 +1363,6 @@ private fun ManualCheckInDialog(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color(0x35FFFFFF))
-                    .border(1.dp, GlassBorderSpecular, RoundedCornerShape(16.dp))
                     .clickable {
                         if (customerName.isNotBlank()) {
                             onConfirm(customerId.ifBlank { "c_${System.currentTimeMillis() % 1000}" }, customerName, membershipPlan)
@@ -1448,7 +1428,6 @@ fun ExportModalDialog(
                             .weight(1f)
                             .clip(RoundedCornerShape(12.dp))
                             .background(if (isSelected) Color(0x35FFFFFF) else Color(0x15FFFFFF))
-                            .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(12.dp))
                             .clickable { onFormatChange(fmt) }
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
@@ -1466,7 +1445,6 @@ fun ExportModalDialog(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
                         .background(StatusActiveGreenBg)
-                        .border(1.dp, StatusActiveGreen.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
                         .padding(12.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -1485,7 +1463,6 @@ fun ExportModalDialog(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color(0x35FFFFFF))
-                    .border(1.dp, GlassBorderSpecular, RoundedCornerShape(16.dp))
                     .clickable {
                         isExportTriggered = true
                         GymOwnerRepository.logAdminAction("Kishore Kumar", "Exported $moduleName ($selectedFormat)", "Export")

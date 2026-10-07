@@ -68,7 +68,6 @@ fun OwnerReportsScreen(
                     modifier = Modifier
                         .clip(RoundedCornerShape(14.dp))
                         .background(Color(0x20FFFFFF))
-                        .border(1.dp, GlassBorderLight, RoundedCornerShape(14.dp))
                         .clickable { showExportDialog = true }
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
@@ -95,7 +94,6 @@ fun OwnerReportsScreen(
                             .weight(1f)
                             .clip(RoundedCornerShape(12.dp))
                             .background(if (isSelected) Color(0x35FFFFFF) else Color(0x15FFFFFF))
-                            .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(12.dp))
                             .clickable { selectedTimeframe = tf }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
@@ -124,7 +122,6 @@ fun OwnerReportsScreen(
                             .weight(1f)
                             .clip(RoundedCornerShape(12.dp))
                             .background(if (isSelected) Color(0x35FFFFFF) else Color(0x15FFFFFF))
-                            .border(1.dp, if (isSelected) GlassBorderSpecular else GlassBorderLight, RoundedCornerShape(12.dp))
                             .clickable { selectedReportSection = sec }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center

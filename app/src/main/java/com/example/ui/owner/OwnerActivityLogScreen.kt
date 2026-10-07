@@ -83,7 +83,6 @@ fun OwnerActivityLogScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color(0x20FFFFFF))
-                            .border(1.dp, GlassBorderLight, RoundedCornerShape(14.dp))
                             .clickable { showExportDialog = true }
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
@@ -213,8 +212,7 @@ private fun ActivityLogCard(log: AdminActivityLogItem) {
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(Color(0x25FFFFFF))
-                    .border(1.dp, GlassBorderLight, CircleShape),
+                    .background(Color(0x25FFFFFF)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(

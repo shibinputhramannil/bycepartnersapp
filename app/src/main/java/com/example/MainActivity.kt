@@ -54,6 +54,9 @@ class MainActivity : ComponentActivity() {
                 onLogout = {
                   currentScreen = AppScreen.AUTH
                 },
+                onSwitchToMemberApp = {
+                  currentScreen = AppScreen.HOME
+                },
                 modifier = Modifier.fillMaxSize()
               )
             }
@@ -167,6 +170,9 @@ class MainActivity : ComponentActivity() {
                 },
                 onLogOutClick = {
                   currentScreen = AppScreen.AUTH
+                },
+                onSwitchToOwnerPortal = {
+                  currentScreen = AppScreen.GYM_OWNER_DASHBOARD
                 },
                 onTabSelected = { tab ->
                   when (tab) {

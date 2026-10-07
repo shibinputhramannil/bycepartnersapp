@@ -91,7 +91,6 @@ fun OwnerCustomersScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color(0x20FFFFFF))
-                                .border(1.dp, GlassBorderLight, RoundedCornerShape(16.dp))
                                 .clickable { showExportDialog = true }
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
                         ) {
@@ -107,7 +106,6 @@ fun OwnerCustomersScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color(0x35FFFFFF))
-                                .border(1.dp, GlassBorderSpecular, RoundedCornerShape(16.dp))
                                 .clickable { showAddCustomerDialog = true }
                                 .padding(horizontal = 14.dp, vertical = 8.dp)
                         ) {
@@ -155,7 +153,6 @@ fun OwnerCustomersScreen(
                                     .weight(1f)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(if (isSelected) Color(0x35FFFFFF) else Color(0x12FFFFFF))
-                                    .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(12.dp))
                                     .clickable { inactiveDaysFilter = days }
                                     .padding(vertical = 7.dp),
                                 contentAlignment = Alignment.Center
@@ -288,8 +285,7 @@ private fun CustomerCardItem(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .background(Color(0x22FFFFFF))
-                        .border(1.dp, GlassBorderLight, CircleShape),
+                        .background(Color(0x22FFFFFF)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -476,7 +472,6 @@ private fun CustomerDetailDialog(
                                 .weight(1f)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(if (isSelected) Color(0x35FFFFFF) else Color(0x12FFFFFF))
-                                .border(1.dp, if (isSelected) GlassBorderSpecular else Color.Transparent, RoundedCornerShape(10.dp))
                                 .clickable { activeDetailTab = tab }
                                 .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center
@@ -620,7 +615,6 @@ private fun CustomerDetailDialog(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0x28FFFFFF))
-                                .border(1.dp, GlassBorderSpecular, RoundedCornerShape(12.dp))
                                 .clickable {
                                     if (newNoteText.isNotBlank()) {
                                         GymOwnerRepository.addCustomerNote(customer.id, newNoteText)
@@ -694,7 +688,6 @@ private fun CustomerDetailDialog(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
                         .background(Color(0x35FFFFFF))
-                        .border(1.dp, GlassBorderSpecular, RoundedCornerShape(14.dp))
                         .clickable { onDismiss() }
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
@@ -760,7 +753,6 @@ private fun InactiveCustomerCardItem(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
                         .background(Color(0x28FFFFFF))
-                        .border(1.dp, GlassBorderSpecular, RoundedCornerShape(10.dp))
                         .clickable { onViewClick() }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {

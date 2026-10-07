@@ -21,10 +21,10 @@ val GlassSurfaceLight = Color(0x1FFFFFFF)
 val GlassSurfaceMedium = Color(0x2BFFFFFF)
 val GlassSurfaceDark = Color(0x50161415)
 
-val GlassBorderLight = Color(0x3DFFFFFF)
-val GlassBorderSpecular = Color(0x75FFFFFF)
-val GlassBorderSubtle = Color(0x24FFFFFF)
-val GlassBorderGreen = Color(0x66FFFFFF)
+val GlassBorderLight = Color(0x12FFFFFF)
+val GlassBorderSpecular = Color(0x18FFFFFF)
+val GlassBorderSubtle = Color(0x08FFFFFF)
+val GlassBorderGreen = Color(0x1834D399)
 
 // Neutral Text Colors
 val TextWhite = Color(0xFFFFFFFF)
