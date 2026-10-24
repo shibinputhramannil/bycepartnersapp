@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
@@ -44,7 +43,7 @@ import com.example.ui.theme.*
 fun OwnerHeader(
     gymName: String = "Iron House Fitness",
     location: String = "Kozhikode, Kerala",
-    unreadCount: Int = 2,
+    unreadCount: Int = 0,
     ownerInitials: String = "KK",
     onMenuClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
@@ -474,6 +473,26 @@ fun OwnerSectionHeader(
     }
 }
 
+// Marks sample figures so they aren't mistaken for live BYCE data
+@Composable
+fun DemoDataNotice(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(StatusPendingAmberBg)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.Info, contentDescription = null, tint = StatusPendingAmber, modifier = Modifier.size(14.dp))
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(text = text, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = StatusPendingAmber)
+    }
+}
+
 // ---------------------------------------------------------------------------
 // 6. LOADING SKELETON, EMPTY STATE & ERROR STATE
 // ---------------------------------------------------------------------------
@@ -620,22 +639,25 @@ fun OwnerNavigationDrawerSheet(
     onNavigate: (String) -> Unit,
     onClose: () -> Unit,
     onLogout: () -> Unit,
-    onSwitchToMemberApp: () -> Unit = {}
+    todayCheckIns: Int = 0,
+    upcomingBookings: Int = 0,
+    unreadNotifications: Int = 0
 ) {
+    // Badges are hidden when the count is 0
+    fun badgeFor(count: Int): String? = count.takeIf { it > 0 }?.toString()
+
     val navItems = listOf(
         OwnerNavItem("Dashboard", Icons.Default.Dashboard),
-        OwnerNavItem("Attendance", Icons.Default.QrCodeScanner, badge = "86"),
+        OwnerNavItem("Attendance", Icons.Default.QrCodeScanner, badge = badgeFor(todayCheckIns)),
         OwnerNavItem("Customers", Icons.Default.People),
         OwnerNavItem("Memberships", Icons.Default.CardMembership),
-        OwnerNavItem("Membership Plans", Icons.Default.PriceCheck),
+        OwnerNavItem("Accepted Passes", Icons.Default.PriceCheck),
         OwnerNavItem("Payments", Icons.Default.Payment),
-        OwnerNavItem("Bookings", Icons.Default.EventAvailable, badge = "42"),
+        OwnerNavItem("Bookings", Icons.Default.EventAvailable, badge = badgeFor(upcomingBookings)),
         OwnerNavItem("Gym Profile", Icons.Default.FitnessCenter),
-        OwnerNavItem("Gym Location", Icons.Default.PinDrop),
         OwnerNavItem("Staff", Icons.Default.Badge),
-        OwnerNavItem("Reports", Icons.Default.BarChart),
         OwnerNavItem("Activity Log", Icons.Default.History),
-        OwnerNavItem("Notifications", Icons.Default.Notifications, badge = "2"),
+        OwnerNavItem("Notifications", Icons.Default.Notifications, badge = badgeFor(unreadNotifications)),
         OwnerNavItem("Settings", Icons.Default.Settings)
     )
 
@@ -753,49 +775,6 @@ fun OwnerNavigationDrawerSheet(
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-
-            // Switch to Member App (5 Tiers & Trials)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0x25FFFFFF))
-                    .clickable {
-                        onClose()
-                        onSwitchToMemberApp()
-                    }
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.DirectionsRun,
-                    contentDescription = "Member App Mode",
-                    tint = NeonGreen,
-                    modifier = Modifier.size(19.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Member App Mode",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextWhite
-                    )
-                    Text(
-                        text = "5 Tiers & Free Trials",
-                        fontSize = 10.sp,
-                        color = ByceCoolGray
-                    )
-                }
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    tint = NeonGreen,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
 
             // Logout Option
             Row(

@@ -38,7 +38,10 @@ fun OwnerCustomersScreen(
     var inactiveDaysFilter by remember { mutableIntStateOf(14) }
     var showExportDialog by remember { mutableStateOf(false) }
     var exportFormat by remember { mutableStateOf("CSV") }
+    // getCustomers() returns the same list object each time, so refreshKey is what
+    // tells filteredCustomers to recompute after a customer is added
     val allCustomers = remember { GymOwnerRepository.getCustomers() }
+    var refreshKey by remember { mutableIntStateOf(0) }
     val inactiveCustomers = remember(inactiveDaysFilter) {
         GymOwnerRepository.getInactiveCustomers(inactiveDaysFilter)
     }
@@ -46,7 +49,7 @@ fun OwnerCustomersScreen(
     var selectedCustomerForDetail by remember { mutableStateOf<CustomerItem?>(null) }
     var showAddCustomerDialog by remember { mutableStateOf(false) }
 
-    val filteredCustomers = remember(searchQuery, selectedStatusFilter, allCustomers) {
+    val filteredCustomers = remember(searchQuery, selectedStatusFilter, allCustomers, refreshKey) {
         allCustomers.filter { customer ->
             val matchesQuery = customer.name.contains(searchQuery, ignoreCase = true) ||
                     customer.email.contains(searchQuery, ignoreCase = true) ||
@@ -245,6 +248,7 @@ fun OwnerCustomersScreen(
                 onDismiss = { showAddCustomerDialog = false },
                 onAdd = { newCustomer ->
                     GymOwnerRepository.addCustomer(newCustomer)
+                    refreshKey++
                     showAddCustomerDialog = false
                 }
             )
@@ -543,8 +547,9 @@ private fun CustomerDetailDialog(
                             letterSpacing = 0.5.sp
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+                        val lastVisit = remember(customer.id) { GymOwnerRepository.getLastCheckIn(customer.id) }
                         Text(
-                            text = "Last checked in: Yesterday, 07:15 AM · Iron House Gym",
+                            text = lastVisit?.let { "Last checked in: ${it.date}, ${it.checkInTime}" } ?: "No check-ins recorded yet",
                             fontSize = 12.sp,
                             color = TextWhite
                         )
@@ -639,6 +644,10 @@ private fun CustomerDetailDialog(
                             letterSpacing = 0.5.sp
                         )
                         Spacer(modifier = Modifier.height(10.dp))
+
+                        if (activities.isEmpty()) {
+                            Text(text = "No activity recorded yet for this customer.", fontSize = 12.sp, color = TextMuted)
+                        }
 
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             activities.forEach { act ->

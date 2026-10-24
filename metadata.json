@@ -1,6 +1,0 @@
-{
-  "name": "Byce",
-  "description": "Discover gyms, manage your membership, and check in with Byce.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

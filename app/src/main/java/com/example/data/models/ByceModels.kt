@@ -90,10 +90,42 @@ data class CustomerItem(
     val membershipPlan: String,
     val startDate: String,
     val endDate: String,
-    val status: String, // Active, Expired, Pending
+    val status: String, // See MemberStatus
     val joinedDate: String,
     val avatarInitials: String = ""
 )
+
+/**
+ * Member / membership status values shared by customers and memberships
+ */
+object MemberStatus {
+    const val ACTIVE = "Active"
+    const val EXPIRED = "Expired"
+    const val PENDING = "Pending"
+    const val FROZEN = "On Hold (Frozen)"
+}
+
+/**
+ * Check-in eligibility rules
+ * - ALLOWED: check in normally
+ * - NEEDS_REASON: expired or pending membership; staff may check in with a reason
+ * - BLOCKED_OVERRIDABLE: frozen membership; blocked unless staff override with a reason
+ * - BLOCKED: unknown member, unrecognized membership status, unknown or cancelled booking,
+ *   or duplicate check-in; no override
+ */
+enum class CheckInEligibility { ALLOWED, NEEDS_REASON, BLOCKED_OVERRIDABLE, BLOCKED }
+
+data class CheckInCheck(
+    val eligibility: CheckInEligibility,
+    val message: String,
+    val customer: CustomerItem? = null,
+    val booking: BookingItem? = null
+)
+
+sealed class CheckInOutcome {
+    data class Success(val record: AttendanceItem) : CheckInOutcome()
+    data class Rejected(val message: String) : CheckInOutcome()
+}
 
 /**
  * Membership Entity
@@ -112,7 +144,8 @@ data class MembershipItem(
 )
 
 /**
- * Membership Plan Tier (Cult-inspired 5 Tiers)
+ * BYCE membership pass tier. Tiers and prices are set by BYCE; partners only see
+ * which passes are accepted at their gym (grantsGymAccess).
  */
 data class MembershipPlanItem(
     val id: String,
@@ -131,36 +164,8 @@ data class MembershipPlanItem(
     val isPopular: Boolean = false,
     val monthlyPrice: Double = price,
     val quarterlyPrice: Double = price * 2.6,
-    val annualPrice: Double = price * 8.0
-)
-
-/**
- * Free Trial Session Booking Model (2 Free Sessions)
- */
-data class FreeTrialSession(
-    val id: String,
-    val centerName: String,
-    val sessionType: String, // Boxing, Strength, Dance, Yoga
-    val trainerName: String,
-    val date: String,
-    val timeSlot: String,
-    val intensity: String = "High",
-    val creditsDeducted: Int = 1,
-    val status: String = "Booked" // Booked, Completed, Cancelled
-)
-
-/**
- * Membership Pause / Freeze Engine
- */
-data class MembershipFreezeRecord(
-    val id: String,
-    val planName: String,
-    val startDate: String,
-    val endDate: String,
-    val pauseDaysUsed: Int,
-    val pauseDaysRemaining: Int,
-    val reason: String,
-    val status: String = "Active"
+    val annualPrice: Double = price * 8.0,
+    val grantsGymAccess: Boolean = true // false for digital-only / coaching-only passes
 )
 
 /**
@@ -391,7 +396,6 @@ data class AdminActivityLogItem(
 enum class ScannedQrType {
     MEMBER_CHECKIN,
     BOOKING_PASS,
-    PAYMENT_UPI,
     GYM_FACILITY,
     UNIVERSAL_CODE
 }
@@ -403,12 +407,12 @@ data class ScannedQrResult(
     val subtitle: String,
     val badgeText: String,
     val customerId: String? = null,
+    val bookingId: String? = null,
     val customerName: String? = null,
     val membershipPlan: String? = null,
     val status: String? = null,
     val shift: String? = null,
     val time: String? = null,
-    val amount: Double? = null,
     val formatName: String = "QR Code",
     val isRecognizedGymEntity: Boolean = true,
     val timestamp: String = "Just now"
@@ -422,7 +426,7 @@ data class AttendanceOverrideRecord(
     val customerId: String,
     val customerName: String,
     val membershipPlan: String,
-    val reason: String, // Turnstile Hardware Failure, Tablet Malfunction, VIP Manual Entry
+    val reason: String, // QR Scanner Not Working, Member Can't Show QR Pass, Manager Approved Entry
     val overrideStaff: String = "Kishore Kumar (Owner)",
     val originalStatus: String = "Not Arrived",
     val updatedStatus: String = "Attended",
@@ -445,28 +449,11 @@ data class GroupWorkoutSession(
     val bookedCount: Int = 18,
     val intensity: String = "High",
     val status: String = "Scheduled", // Scheduled, In Progress, Substitute Assigned, Completed
-    val proxyBroadcastActive: Boolean = false,
     val assignedProxyCoach: String? = null
 )
 
 /**
- * 4. Automated Proxy Trainer Search Broadcast
- */
-data class ProxyTrainerBroadcast(
-    val id: String,
-    val sessionId: String,
-    val sessionTitle: String,
-    val originalCoach: String,
-    val timeSlot: String,
-    val broadcastTime: String = "Just now",
-    val radiusKm: Int = 15,
-    val notifiedTrainersCount: Int = 14,
-    val acceptedTrainers: List<String> = listOf("Coach Vicky (Certified HRX)", "Coach Anjali (Zumba Specialist)"),
-    val status: String = "Broadcast Active" // Broadcast Active, Substitute Confirmed, Closed
-)
-
-/**
- * 5. Full-Screen Incoming-Call Style Trial Buzzer Alert
+ * 5. First-Time Trial Arrival Alert (visual only; no sound or push notification yet)
  */
 data class TrialCheckInBuzzerAlert(
     val id: String,
@@ -480,40 +467,4 @@ data class TrialCheckInBuzzerAlert(
     val isAudioAlertPlaying: Boolean = true,
     val assignedGreeter: String? = null,
     val isAcknowledged: Boolean = false
-)
-
-/**
- * 6. IoT Hardware & Machinery Telemetry
- */
-data class SmartEquipmentTelemetry(
-    val id: String,
-    val machineName: String, // Technogym Run Pro #04, LifeFitness Cable Tower #02, Matrix Rower #01, Precor Elliptical #03
-    val machineCategory: String, // Treadmill, Cable Machine, Rower, Elliptical, Smart Bike
-    val serialNumber: String,
-    val operationalStatus: String = "Optimal", // Optimal, Service Due, Heavy Load, Warning
-    val totalKmRun: Double,
-    val dailyMotorHours: Double,
-    val currentRpm: Int,
-    val wearPercentage: Int, // 0 - 100%
-    val nextServiceDue: String,
-    val lastTelemetrySync: String = "Real-time live sync"
-)
-
-/**
- * 8. Point of Sale (POS) & Billing Invoice
- */
-data class PosInvoiceItem(
-    val id: String,
-    val invoiceNumber: String,
-    val customerName: String,
-    val customerPhone: String,
-    val transactionType: String, // On-Site Upgrade, Membership Renewal, Merch Purchase, Billing Refund
-    val itemName: String,
-    val baseAmount: Double,
-    val gstTax: Double,
-    val totalAmount: Double,
-    val paymentMode: String, // Razorpay POS, Dynamic UPI QR, Card Swipe, Cash
-    val billingStaff: String = "Kishore Kumar",
-    val status: String = "Paid", // Paid, Refunded, Pending
-    val timestamp: String = "Just now"
 )

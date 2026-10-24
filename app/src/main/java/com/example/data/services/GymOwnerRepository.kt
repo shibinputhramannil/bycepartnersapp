@@ -141,7 +141,8 @@ object GymOwnerRepository {
             isPopular = false,
             monthlyPrice = 399.0,
             quarterlyPrice = 999.0,
-            annualPrice = 2999.0
+            annualPrice = 2999.0,
+            grantsGymAccess = false
         ),
         MembershipPlanItem(
             id = "plan_coaching_5",
@@ -166,17 +167,10 @@ object GymOwnerRepository {
             isPopular = false,
             monthlyPrice = 1499.0,
             quarterlyPrice = 3899.0,
-            annualPrice = 11999.0
+            annualPrice = 11999.0,
+            grantsGymAccess = false
         )
     )
-
-    private val sampleTrialSessions = mutableListOf(
-        FreeTrialSession("tr_1", "Iron House Fitness", "Boxing & Cardio Kick", "Coach Vicky", "Tomorrow", "07:00 AM - 08:00 AM", "High", 1, "Available"),
-        FreeTrialSession("tr_2", "Iron House Fitness", "Strength & Conditioning", "Coach Ramesh", "Tomorrow", "06:00 PM - 07:00 PM", "High", 1, "Available"),
-        FreeTrialSession("tr_3", "Iron House Fitness", "Dance Fitness / Zumba", "Coach Anjali", "Friday", "05:30 PM - 06:30 PM", "Medium", 1, "Available"),
-        FreeTrialSession("tr_4", "Iron House Fitness", "Power Yoga & Flow", "Coach Priya", "Saturday", "08:00 AM - 09:00 AM", "Low", 1, "Available")
-    )
-    private var freeTrialCredits = 2
 
     private val sampleCustomers = mutableListOf(
         CustomerItem("c1", "Rahul Menon", "rahul.menon@gmail.com", "+91 98471 22334", "Yearly", "10 Jan 2026", "09 Jan 2027", "Active", "10 Jan 2025", "RM"),
@@ -223,7 +217,7 @@ object GymOwnerRepository {
             reminderMinutesBefore = 30,
             reminderScheduled = true,
             reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Scheduled (Triggers at 05:30 PM via Gmail)"
+            reminderStatus = "Not sent"
         ),
         BookingItem(
             id = "b2",
@@ -239,7 +233,7 @@ object GymOwnerRepository {
             reminderMinutesBefore = 30,
             reminderScheduled = true,
             reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Scheduled (Triggers at 07:30 PM via Gmail)"
+            reminderStatus = "Not sent"
         ),
         BookingItem(
             id = "b3",
@@ -255,7 +249,7 @@ object GymOwnerRepository {
             reminderMinutesBefore = 30,
             reminderScheduled = true,
             reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Sent via Gmail at 05:30 AM"
+            reminderStatus = "Not sent"
         ),
         BookingItem(
             id = "b4",
@@ -271,7 +265,7 @@ object GymOwnerRepository {
             reminderMinutesBefore = 30,
             reminderScheduled = true,
             reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Sent via Gmail at 07:30 AM"
+            reminderStatus = "Not sent"
         ),
         BookingItem(
             id = "b5",
@@ -287,7 +281,7 @@ object GymOwnerRepository {
             reminderMinutesBefore = 30,
             reminderScheduled = true,
             reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Scheduled (Triggers at 06:00 AM via Gmail)"
+            reminderStatus = "Not sent"
         ),
         BookingItem(
             id = "b6",
@@ -304,6 +298,23 @@ object GymOwnerRepository {
             reminderScheduled = false,
             reminderDeliveryChannel = "Gmail",
             reminderStatus = "Cancelled"
+        ),
+        // Walk-in day pass with no member profile
+        BookingItem(
+            id = "b7",
+            customerName = "Nikhil Thomas",
+            customerPhone = "+91 97440 21567",
+            customerEmail = "nikhil.thomas@gmail.com",
+            membershipPlan = "Day Pass",
+            date = "Today",
+            time = "06:30 PM - 08:00 PM",
+            shift = "Evening Shift",
+            status = "Upcoming",
+            arrivalStatus = "Confirmed",
+            reminderMinutesBefore = 30,
+            reminderScheduled = false,
+            reminderDeliveryChannel = "Gmail",
+            reminderStatus = "Not sent"
         )
     )
 
@@ -395,96 +406,8 @@ object GymOwnerRepository {
     // GET /api/v1/admin/memberships/
     fun getMemberships(): List<MembershipItem> = sampleMemberships
 
-    // GET /api/v1/gyms/{gym_id}/membership-plans/
-    fun getMembershipPlans(): List<MembershipPlanItem> = samplePlans
-
-    fun addPlan(plan: MembershipPlanItem) {
-        samplePlans.add(plan)
-    }
-
-    fun togglePlanStatus(planId: String) {
-        val index = samplePlans.indexOfFirst { it.id == planId }
-        if (index != -1) {
-            val p = samplePlans[index]
-            samplePlans[index] = p.copy(isActive = !p.isActive)
-        }
-    }
-
-    // Free Trial Sessions Engine (2 Free Trial Credits)
-    fun getTrialSessions(): List<FreeTrialSession> = sampleTrialSessions
-
-    fun getFreeTrialCredits(): Int = freeTrialCredits
-
-    fun bookTrialSession(sessionId: String): Boolean {
-        val index = sampleTrialSessions.indexOfFirst { it.id == sessionId }
-        if (index != -1 && freeTrialCredits > 0) {
-            val session = sampleTrialSessions[index]
-            sampleTrialSessions[index] = session.copy(status = "Booked")
-            freeTrialCredits = (freeTrialCredits - 1).coerceAtLeast(0)
-
-            val newBooking = BookingItem(
-                id = "trial_${System.currentTimeMillis()}",
-                customerName = "Trial Member (Alex)",
-                customerPhone = "+91 98470 99887",
-                customerEmail = "alex.member@cultgym.com",
-                membershipPlan = "2-Session Free Trial (${session.sessionType})",
-                date = session.date,
-                time = session.timeSlot,
-                shift = if (session.timeSlot.contains("AM")) "Morning Shift" else "Evening Shift",
-                status = "Upcoming",
-                arrivalStatus = "Confirmed",
-                reminderMinutesBefore = 30,
-                reminderScheduled = true,
-                reminderDeliveryChannel = "Gmail",
-                reminderStatus = "Scheduled (30m before session via Gmail)"
-            )
-            sampleBookings.add(0, newBooking)
-
-            logAdminAction("System Engine", "Booked Free Trial session '${session.sessionType}' at ${session.timeSlot}. Credits remaining: $freeTrialCredits", "Bookings")
-            addNotification(
-                NotificationItem(
-                    id = "notif_trial_${System.currentTimeMillis()}",
-                    title = "Free Trial Session Confirmed",
-                    message = "Your ${session.sessionType} trial session is booked for ${session.date} (${session.timeSlot}). Dynamic check-in QR code is ready.",
-                    type = "Booking",
-                    timestamp = "Just now",
-                    isRead = false
-                )
-            )
-            return true
-        }
-        return false
-    }
-
-    private val sampleFreezes = mutableListOf(
-        MembershipFreezeRecord(
-            id = "frz_1",
-            planName = "All-Access Elite",
-            startDate = "15 Oct 2026",
-            endDate = "25 Oct 2026",
-            pauseDaysUsed = 10,
-            pauseDaysRemaining = 35,
-            reason = "Work Travel / Vacation",
-            status = "Scheduled"
-        )
-    )
-
-    fun getMembershipFreezes(): List<MembershipFreezeRecord> = sampleFreezes
-
-    fun requestMembershipFreeze(planName: String, startDate: String, endDate: String, days: Int, reason: String) {
-        val freeze = MembershipFreezeRecord(
-            id = "frz_${System.currentTimeMillis()}",
-            planName = planName,
-            startDate = startDate,
-            endDate = endDate,
-            pauseDaysUsed = days,
-            pauseDaysRemaining = (45 - days).coerceAtLeast(0),
-            reason = reason,
-            status = "Active"
-        )
-        sampleFreezes.add(0, freeze)
-        logAdminAction("Kishore Kumar", "Approved Membership freeze ($days days) from $startDate to $endDate for $planName", "Memberships")
-    }
+    // BYCE passes that give entry at this gym. Tiers and prices are managed by BYCE (read-only here).
+    fun getAcceptedPasses(): List<MembershipPlanItem> = samplePlans.filter { it.isActive && it.grantsGymAccess }
 
     // ----------------------------------------------------
     // 1. MANUAL ATTENDANCE OVERRIDE ENGINE
@@ -493,75 +416,45 @@ object GymOwnerRepository {
 
     fun getAttendanceOverrides(): List<AttendanceOverrideRecord> = sampleOverrides
 
+    // The override reason also satisfies the expired/pending/frozen reason rule;
+    // unknown members and duplicate check-ins are still rejected.
     fun performAttendanceOverride(
         customerId: String,
-        customerName: String,
-        plan: String,
         reason: String,
         staffName: String = "Kishore Kumar (Owner)"
-    ): Boolean {
-        recordCheckIn(
-            customerId = customerId,
-            name = customerName,
-            plan = plan
-        )
-        val bookingIdx = sampleBookings.indexOfFirst { it.customerName.equals(customerName, ignoreCase = true) || it.id == customerId }
-        if (bookingIdx != -1) {
-            sampleBookings[bookingIdx] = sampleBookings[bookingIdx].copy(arrivalStatus = "Attended", status = "Completed")
-        }
-        val record = AttendanceOverrideRecord(
-            id = "ovr_${System.currentTimeMillis()}",
-            customerId = customerId,
-            customerName = customerName,
-            membershipPlan = plan,
-            reason = reason,
-            overrideStaff = staffName,
-            originalStatus = "Hardware Bypass",
-            updatedStatus = "Attended",
-            timestamp = "Just now"
-        )
-        sampleOverrides.add(0, record)
-        logAdminAction(staffName, "Forced attendance override for $customerName ($plan). Reason: $reason", "Attendance")
-        addNotification(
-            NotificationItem(
-                id = "notif_ovr_${System.currentTimeMillis()}",
-                title = "Manual Override Check-In",
-                message = "Forced check-in status to 'Attended' for $customerName. Hardware bypass reason: $reason",
-                type = "Booking",
-                timestamp = "Just now",
-                isRead = false
+    ): CheckInOutcome {
+        val outcome = checkIn(customerId = customerId, reason = reason, source = "manual override", staffName = staffName)
+        if (outcome is CheckInOutcome.Success) {
+            val visit = outcome.record
+            val record = AttendanceOverrideRecord(
+                id = "ovr_${System.currentTimeMillis()}",
+                customerId = visit.customerId,
+                customerName = visit.customerName,
+                membershipPlan = visit.membershipPlan,
+                reason = reason,
+                overrideStaff = staffName,
+                originalStatus = "Manual Override",
+                updatedStatus = "Attended",
+                timestamp = "Just now"
             )
-        )
-        return true
+            sampleOverrides.add(0, record)
+            logAdminAction(staffName, "Forced attendance override for ${visit.customerName} (${visit.membershipPlan}). Reason: $reason", "Attendance")
+            addNotification(
+                NotificationItem(
+                    id = "notif_ovr_${System.currentTimeMillis()}",
+                    title = "Manual Override Check-In",
+                    message = "Forced check-in status to 'Attended' for ${visit.customerName}. Reason: $reason",
+                    type = "Booking",
+                    timestamp = "Just now",
+                    isRead = false
+                )
+            )
+        }
+        return outcome
     }
 
     // ----------------------------------------------------
-    // 2. MEMBERSHIP DEFERMENT & AUTO-RECALCULATED FREEZES
-    // ----------------------------------------------------
-    fun deferMembership(membershipId: String, freezeDays: Int, reason: String, staffName: String = "Kishore Kumar"): Boolean {
-        val index = sampleMemberships.indexOfFirst { it.id == membershipId }
-        if (index != -1) {
-            val m = sampleMemberships[index]
-            val updatedEndDate = "${m.endDate} (+${freezeDays}d deferred)"
-            sampleMemberships[index] = m.copy(
-                status = "On Hold (Frozen)",
-                endDate = updatedEndDate
-            )
-            requestMembershipFreeze(
-                planName = m.planName,
-                startDate = "Today",
-                endDate = updatedEndDate,
-                days = freezeDays,
-                reason = reason
-            )
-            logAdminAction(staffName, "Placed membership for ${m.customerName} on hold ($freezeDays days deferred). Reason: $reason", "Memberships")
-            return true
-        }
-        return false
-    }
-
-    // ----------------------------------------------------
-    // 3 & 4. TRAINER & SESSION SCHEDULING + PROXY BROADCAST
+    // 3. TRAINER & SESSION SCHEDULING
     // ----------------------------------------------------
     private val sampleWorkoutSessions = mutableListOf(
         GroupWorkoutSession("ws_1", "HRX High-Intensity Training", "HRX", "Coach Vicky", "In-House", "Studio 1 (Main Arena)", "06:30 AM - 07:20 AM", 50, 25, 22, "Extreme", "Scheduled"),
@@ -571,45 +464,7 @@ object GymOwnerRepository {
         GroupWorkoutSession("ws_5", "S&C Compound Strength", "Strength", "Coach Sanjay", "In-House", "Strength Floor Zone A", "07:00 PM - 07:50 PM", 50, 18, 16, "Extreme", "Scheduled")
     )
 
-    private val sampleProxyBroadcasts = mutableListOf<ProxyTrainerBroadcast>()
-
     fun getWorkoutSessions(): List<GroupWorkoutSession> = sampleWorkoutSessions
-
-    fun getProxyBroadcasts(): List<ProxyTrainerBroadcast> = sampleProxyBroadcasts
-
-    fun broadcastProxyTrainerSearch(sessionId: String): Boolean {
-        val index = sampleWorkoutSessions.indexOfFirst { it.id == sessionId }
-        if (index != -1) {
-            val s = sampleWorkoutSessions[index]
-            sampleWorkoutSessions[index] = s.copy(
-                proxyBroadcastActive = true,
-                status = "Proxy Search Active"
-            )
-            val broadcast = ProxyTrainerBroadcast(
-                id = "bc_${System.currentTimeMillis()}",
-                sessionId = s.id,
-                sessionTitle = s.title,
-                originalCoach = s.coachName,
-                timeSlot = s.timeSlot,
-                notifiedTrainersCount = 14,
-                status = "Broadcast Active"
-            )
-            sampleProxyBroadcasts.add(0, broadcast)
-            logAdminAction("Emergency Dispatcher", "Broadcasted emergency substitute request for '${s.title}' at ${s.timeSlot} to 14 local certified trainers.", "Staff")
-            addNotification(
-                NotificationItem(
-                    id = "notif_bc_${System.currentTimeMillis()}",
-                    title = "Proxy Trainer Broadcast Sent",
-                    message = "Emergency substitute opportunity broadcasted for '${s.title}' (${s.timeSlot}). 14 trainers notified.",
-                    type = "System",
-                    timestamp = "Just now",
-                    isRead = false
-                )
-            )
-            return true
-        }
-        return false
-    }
 
     fun assignProxyTrainer(sessionId: String, substituteCoach: String): Boolean {
         val index = sampleWorkoutSessions.indexOfFirst { it.id == sessionId }
@@ -617,7 +472,6 @@ object GymOwnerRepository {
             val s = sampleWorkoutSessions[index]
             sampleWorkoutSessions[index] = s.copy(
                 coachName = substituteCoach,
-                proxyBroadcastActive = false,
                 status = "Substitute Assigned",
                 assignedProxyCoach = substituteCoach
             )
@@ -628,7 +482,7 @@ object GymOwnerRepository {
     }
 
     // ----------------------------------------------------
-    // 5. TRIAL CHECK-IN AUDIO BUZZER ALERT
+    // 5. FIRST-TIME TRIAL ARRIVAL ALERT (visual only)
     // ----------------------------------------------------
     private var activeTrialAlert: TrialCheckInBuzzerAlert? = TrialCheckInBuzzerAlert(
         id = "alert_trial_01",
@@ -637,7 +491,7 @@ object GymOwnerRepository {
         sessionType = "Boxing & Cardio Kick",
         trialPassType = "2-Session Free Trial",
         centerName = "Iron House Fitness",
-        arrivalTime = "Just now (Turnstile #1)",
+        arrivalTime = "Just now (Front desk)",
         isFirstTimeTrialist = true,
         isAudioAlertPlaying = true,
         isAcknowledged = false
@@ -665,76 +519,6 @@ object GymOwnerRepository {
         activeTrialAlert = null
     }
 
-    // ----------------------------------------------------
-    // 6. IOT MACHINERY TELEMETRY SYNC
-    // ----------------------------------------------------
-    private val sampleIoTTelemetry = mutableListOf(
-        SmartEquipmentTelemetry("iot_1", "Technogym Skillrun Pro #01", "Treadmill", "TG-RUN-9842", "Optimal", 14820.5, 8.4, 240, 18, "In 45 Days"),
-        SmartEquipmentTelemetry("iot_2", "Technogym Skillrun Pro #02", "Treadmill", "TG-RUN-9843", "Heavy Load", 19450.2, 11.2, 280, 72, "In 8 Days"),
-        SmartEquipmentTelemetry("iot_3", "LifeFitness Dual Cable Tower #01", "Cable Machine", "LF-CBL-4421", "Optimal", 0.0, 9.6, 0, 24, "In 60 Days"),
-        SmartEquipmentTelemetry("iot_4", "Matrix Rower Matrix CXP #01", "Rower", "MX-ROW-1102", "Optimal", 4520.0, 5.1, 140, 12, "In 90 Days"),
-        SmartEquipmentTelemetry("iot_5", "Precor Commercial Elliptical #03", "Elliptical", "PC-ELP-7714", "Service Due", 22100.0, 12.8, 220, 88, "Immediate Action")
-    )
-
-    fun getIoTTelemetry(): List<SmartEquipmentTelemetry> = sampleIoTTelemetry
-
-    // ----------------------------------------------------
-    // 8. POINT OF SALE (POS) & BILLING TRANSACTIONS
-    // ----------------------------------------------------
-    private val samplePosInvoices = mutableListOf(
-        PosInvoiceItem("inv_1", "POS-2026-0891", "Rahul Menon", "+91 98471 22334", "Membership Renewal", "All-Access Elite (Annual)", 14999.0, 2699.82, 17698.82, "Razorpay POS Terminal", "Kishore Kumar", "Paid", "Today, 11:20 AM"),
-        PosInvoiceItem("inv_2", "POS-2026-0890", "Deepak Varma", "+91 94471 55667", "On-Site Upgrade", "Upgrade to Standard Pro (3-Mo)", 3299.0, 593.82, 3892.82, "Dynamic UPI QR", "Staff Kavya", "Paid", "Today, 10:45 AM"),
-        PosInvoiceItem("inv_3", "POS-2026-0889", "Ananya Nair", "+91 97455 33445", "Merch Purchase", "BYCE High-Performance Gym Kit", 1299.0, 233.82, 1532.82, "Card Swipe", "Kishore Kumar", "Paid", "Yesterday, 06:15 PM"),
-        PosInvoiceItem("inv_4", "POS-2026-0888", "Rohan Pillai", "+91 94470 11223", "Billing Refund", "Unused Session Package Refund", -1499.0, -269.82, -1768.82, "Original Payment Mode", "Kishore Kumar", "Refunded", "24 Sep 2026")
-    )
-
-    fun getPosInvoices(): List<PosInvoiceItem> = samplePosInvoices
-
-    fun createPosInvoice(
-        customerName: String,
-        customerPhone: String,
-        type: String,
-        itemName: String,
-        amount: Double,
-        paymentMode: String
-    ): PosInvoiceItem {
-        val gst = amount * 0.18
-        val total = amount + gst
-        val inv = PosInvoiceItem(
-            id = "inv_${System.currentTimeMillis()}",
-            invoiceNumber = "POS-2026-${(1000..9999).random()}",
-            customerName = customerName,
-            customerPhone = customerPhone,
-            transactionType = type,
-            itemName = itemName,
-            baseAmount = amount,
-            gstTax = gst,
-            totalAmount = total,
-            paymentMode = paymentMode,
-            billingStaff = "Kishore Kumar",
-            status = "Paid",
-            timestamp = "Just now"
-        )
-        samplePosInvoices.add(0, inv)
-        samplePayments.add(
-            0,
-            PaymentItem(
-                transactionId = inv.invoiceNumber,
-                customerName = customerName,
-                planName = itemName,
-                amount = total,
-                provider = paymentMode,
-                status = "Successful",
-                date = "Today",
-                orderId = inv.id,
-                paymentId = "POS_APP",
-                paidAt = "Just now"
-            )
-        )
-        logAdminAction("Kishore Kumar", "Generated POS Invoice ${inv.invoiceNumber} for $customerName: ₹${total.toInt()} via $paymentMode", "Payments")
-        return inv
-    }
-
     // GET /api/v1/admin/payments/
     fun getPayments(): List<PaymentItem> = samplePayments
 
@@ -749,18 +533,13 @@ object GymOwnerRepository {
         }
     }
 
-    fun markBookingArrived(bookingId: String, adminName: String = "Kishore Kumar") {
-        val index = sampleBookings.indexOfFirst { it.id == bookingId }
-        if (index != -1) {
-            val booking = sampleBookings[index]
-            sampleBookings[index] = booking.copy(arrivalStatus = "Checked In", status = "Completed")
-            recordCheckIn(
-                customerId = booking.id,
-                name = booking.customerName,
-                plan = booking.membershipPlan
-            )
+    fun markBookingArrived(bookingId: String, reason: String? = null, adminName: String = "Kishore Kumar"): CheckInOutcome {
+        val outcome = checkIn(bookingId = bookingId, reason = reason, source = "bookings", staffName = adminName)
+        if (outcome is CheckInOutcome.Success) {
+            val booking = sampleBookings.first { it.id == bookingId }
             logAdminAction(adminName, "Marked ${booking.customerName} as arrived / checked in for slot ${booking.time}", "Bookings")
         }
+        return outcome
     }
 
     // Shift & 30-Minute Gmail Reminder Engine
@@ -776,46 +555,17 @@ object GymOwnerRepository {
         )
     }
 
-    fun sendBookingGmailReminder(bookingId: String): Boolean {
-        val index = sampleBookings.indexOfFirst { it.id == bookingId }
-        if (index != -1) {
-            val b = sampleBookings[index]
-            sampleBookings[index] = b.copy(
-                reminderScheduled = true,
-                reminderStatus = "Sent via Gmail (30m pre-shift alert delivered)"
-            )
-            logAdminAction(
-                "Kishore Kumar",
-                "Dispatched 30m pre-shift Gmail reminder to ${b.customerName} (${b.customerEmail}) for ${b.shift} slot ${b.time}",
-                "Bookings"
-            )
-            addNotification(
-                NotificationItem(
-                    id = "notif_${System.currentTimeMillis()}",
-                    title = "Gmail Shift Reminder Sent",
-                    message = "30-min reminder delivered to ${b.customerName} (${b.customerEmail}) for ${b.shift} (${b.time}) via Gmail.",
-                    type = "Reminder",
-                    timestamp = "Just now",
-                    isRead = false
-                )
-            )
-            return true
-        }
-        return false
-    }
-
     fun updateBookingReminderSchedule(bookingId: String, minutesBefore: Int, shift: String) {
         val index = sampleBookings.indexOfFirst { it.id == bookingId }
         if (index != -1) {
             val b = sampleBookings[index]
             sampleBookings[index] = b.copy(
                 shift = shift,
-                reminderMinutesBefore = minutesBefore,
-                reminderStatus = "Scheduled (${minutesBefore}m before $shift via Gmail)"
+                reminderMinutesBefore = minutesBefore
             )
             logAdminAction(
                 "Kishore Kumar",
-                "Updated reminder schedule for ${b.customerName}: $minutesBefore mins before $shift via Gmail",
+                "Moved ${b.customerName}'s booking to $shift",
                 "Bookings"
             )
         }
@@ -843,6 +593,13 @@ object GymOwnerRepository {
 
     // Notifications
     fun getNotifications(): List<NotificationItem> = sampleNotifications
+
+    fun getUnreadNotificationCount(): Int = sampleNotifications.count { !it.isRead }
+
+    // Counts for the navigation drawer badges
+    fun getTodayCheckInCount(): Int = sampleAttendance.count { it.date == "Today" }
+
+    fun getUpcomingBookingCount(): Int = sampleBookings.count { it.status == "Upcoming" }
 
     fun markNotificationAsRead(id: String) {
         val index = sampleNotifications.indexOfFirst { it.id == id }
@@ -888,6 +645,10 @@ object GymOwnerRepository {
 
     fun getAttendanceRecords(): List<AttendanceItem> = sampleAttendance
 
+    // Attendance is stored newest first
+    fun getLastCheckIn(customerId: String): AttendanceItem? =
+        sampleAttendance.firstOrNull { it.customerId == customerId }
+
     fun getAttendanceSummary(): AttendanceSummary = AttendanceSummary(
         todayCheckins = 86,
         currentlyInside = 28,
@@ -895,7 +656,8 @@ object GymOwnerRepository {
         avgDailyVisits = 112
     )
 
-    fun recordCheckIn(customerId: String, name: String, plan: String = "Active Plan"): AttendanceItem {
+    // Writes the attendance record only; every caller must go through checkIn() first
+    private fun recordCheckIn(customerId: String, name: String, plan: String = "Active Plan"): AttendanceItem {
         val newRecord = AttendanceItem(
             id = "att_${System.currentTimeMillis()}",
             customerId = customerId,
@@ -918,6 +680,119 @@ object GymOwnerRepository {
             sampleAttendance[index] = record.copy(checkOutTime = "Just now", status = "Completed")
             logAdminAction("Kishore Kumar", "Recorded check-out for ${record.customerName}", "Attendance")
         }
+    }
+
+    // ----------------------------------------------------
+    // CHECK-IN ELIGIBILITY (shared by scanner, manual check-in, override, bookings)
+    // ----------------------------------------------------
+    fun findCustomer(customerId: String): CustomerItem? = sampleCustomers.firstOrNull { it.id == customerId }
+
+    fun searchCustomers(query: String, limit: Int = 6): List<CustomerItem> {
+        val q = query.trim()
+        if (q.isEmpty()) return emptyList()
+        val qDigits = q.filter { it.isDigit() }
+        return sampleCustomers.filter {
+            it.name.contains(q, ignoreCase = true) ||
+                it.id.equals(q, ignoreCase = true) ||
+                it.email.contains(q, ignoreCase = true) ||
+                (qDigits.length >= 4 && it.phone.filter { c -> c.isDigit() }.contains(qDigits))
+        }.take(limit)
+    }
+
+    private fun isCheckedInToday(customerId: String): Boolean =
+        sampleAttendance.any { it.customerId == customerId && it.date == "Today" && it.checkOutTime == null }
+
+    fun evaluateMemberCheckIn(customerId: String): CheckInCheck {
+        val customer = findCustomer(customerId)
+            ?: return CheckInCheck(CheckInEligibility.BLOCKED, "No matching member found.")
+        if (isCheckedInToday(customer.id)) {
+            return CheckInCheck(CheckInEligibility.BLOCKED, "${customer.name} is already checked in.", customer)
+        }
+        return when (customer.status) {
+            MemberStatus.ACTIVE -> CheckInCheck(CheckInEligibility.ALLOWED, "Active membership.", customer)
+            MemberStatus.EXPIRED -> CheckInCheck(
+                CheckInEligibility.NEEDS_REASON,
+                "Membership expired. Check in only with a reason; it will be logged.",
+                customer
+            )
+            MemberStatus.PENDING -> CheckInCheck(
+                CheckInEligibility.NEEDS_REASON,
+                "Membership payment is pending. Check in only with a reason; it will be logged.",
+                customer
+            )
+            MemberStatus.FROZEN -> CheckInCheck(
+                CheckInEligibility.BLOCKED_OVERRIDABLE,
+                "Membership is paused (frozen). Check-in is blocked unless staff override with a reason.",
+                customer
+            )
+            // Unrecognized statuses are never overridable
+            else -> CheckInCheck(
+                CheckInEligibility.BLOCKED,
+                "Membership status \"${customer.status}\" isn't recognized. Check-in is blocked; update the member's status first.",
+                customer
+            )
+        }
+    }
+
+    fun evaluateBookingCheckIn(bookingId: String): CheckInCheck {
+        val booking = sampleBookings.firstOrNull { it.id == bookingId }
+            ?: return CheckInCheck(CheckInEligibility.BLOCKED, "No matching booking found.")
+        if (booking.status.equals("Cancelled", ignoreCase = true)) {
+            return CheckInCheck(CheckInEligibility.BLOCKED, "This booking was cancelled.", booking = booking)
+        }
+        val alreadyArrived = booking.arrivalStatus in listOf("Checked In", "Attended") ||
+            booking.status.equals("Completed", ignoreCase = true)
+        if (alreadyArrived) {
+            return CheckInCheck(CheckInEligibility.BLOCKED, "Already checked in for this booking.", booking = booking)
+        }
+        val customer = sampleCustomers.firstOrNull { it.name.equals(booking.customerName, ignoreCase = true) }
+        // A booking without a member record (e.g. a day pass) is its own entitlement
+        return if (customer != null) {
+            evaluateMemberCheckIn(customer.id).copy(booking = booking)
+        } else {
+            CheckInCheck(CheckInEligibility.ALLOWED, "Booking pass without a member record.", booking = booking)
+        }
+    }
+
+    fun checkIn(
+        customerId: String? = null,
+        bookingId: String? = null,
+        reason: String? = null,
+        source: String,
+        staffName: String = "Kishore Kumar"
+    ): CheckInOutcome {
+        val check = when {
+            bookingId != null -> evaluateBookingCheckIn(bookingId)
+            customerId != null -> evaluateMemberCheckIn(customerId)
+            else -> return CheckInOutcome.Rejected("No member or booking selected.")
+        }
+        when (check.eligibility) {
+            CheckInEligibility.BLOCKED -> return CheckInOutcome.Rejected(check.message)
+            CheckInEligibility.NEEDS_REASON, CheckInEligibility.BLOCKED_OVERRIDABLE ->
+                if (reason.isNullOrBlank()) return CheckInOutcome.Rejected("A reason is required. ${check.message}")
+            CheckInEligibility.ALLOWED -> Unit
+        }
+
+        val customer = check.customer
+        val booking = check.booking
+        val name = customer?.name ?: booking!!.customerName
+        val record = recordCheckIn(
+            customerId = customer?.id ?: booking!!.id,
+            name = name,
+            plan = customer?.membershipPlan ?: booking!!.membershipPlan
+        )
+        if (booking != null) {
+            val index = sampleBookings.indexOfFirst { it.id == booking.id }
+            sampleBookings[index] = booking.copy(arrivalStatus = "Checked In", status = "Completed")
+        }
+        if (check.eligibility != CheckInEligibility.ALLOWED) {
+            logAdminAction(
+                staffName,
+                "Check-in override for $name (${customer?.status ?: "no member record"}) via $source. Reason: $reason",
+                "Attendance"
+            )
+        }
+        return CheckInOutcome.Success(record)
     }
 
     // ----------------------------------------------------
@@ -1017,12 +892,9 @@ object GymOwnerRepository {
         )
     )
 
+    // Members without recorded events get an empty timeline, not invented history
     fun getCustomerActivityTimeline(customerId: String): List<CustomerActivityEvent> {
-        return sampleCustomerActivities[customerId] ?: listOf(
-            CustomerActivityEvent("def1", customerId, "Gym Check-in", "Attendance logged via BYCE check-in", "22 Sep", "11:00 AM", "CheckIn"),
-            CustomerActivityEvent("def2", customerId, "Payment Received", "Membership transaction settled", "15 Sep", "02:15 PM", "Payment"),
-            CustomerActivityEvent("def3", customerId, "Membership Joined", "Registered on BYCE platform", "01 Aug", "10:00 AM", "Membership")
-        )
+        return sampleCustomerActivities[customerId] ?: emptyList()
     }
 
     // ----------------------------------------------------
@@ -1037,21 +909,6 @@ object GymOwnerRepository {
     )
 
     fun getPendingPayments(): List<PendingPaymentItem> = samplePendingPayments
-
-    fun recordPendingPaymentPaid(paymentId: String, recordedBy: String = "Kishore Kumar") {
-        val index = samplePendingPayments.indexOfFirst { it.id == paymentId }
-        if (index != -1) {
-            val item = samplePendingPayments.removeAt(index)
-            logAdminAction(recordedBy, "Recorded manual payment for ${item.customerName} (₹${item.amount.toInt()})", "Payments")
-        }
-    }
-
-    fun sendPaymentReminder(paymentId: String, sender: String = "Kishore Kumar") {
-        val item = samplePendingPayments.find { it.id == paymentId }
-        if (item != null) {
-            logAdminAction(sender, "Sent payment reminder to ${item.customerName} (${item.phoneNumber})", "Payments")
-        }
-    }
 
     // ----------------------------------------------------
     // FEATURE 11: GYM CAPACITY & LIVE OCCUPANCY
@@ -1108,11 +965,8 @@ object GymOwnerRepository {
     private val sampleActivityLogs = mutableListOf(
         AdminActivityLogItem("log_1", "Kishore Kumar", "Regenerated Gym Check-in QR Payload", "Gym QR", "Today, 10:14 AM"),
         AdminActivityLogItem("log_2", "Sanjay Nambiar", "Recorded manual check-in for Rahul Menon", "Attendance", "Today, 10:04 AM"),
-        AdminActivityLogItem("log_3", "Kishore Kumar", "Updated Quarterly Membership Plan pricing to ₹3,999", "Plans", "Today, 09:30 AM"),
         AdminActivityLogItem("log_4", "Kavya Sreedharan", "Added CRM note for Ananya Nair", "Customers", "Today, 09:16 AM"),
-        AdminActivityLogItem("log_5", "Kishore Kumar", "Verified bank settlement for TXN-984210", "Payments", "Yesterday, 06:45 PM"),
-        AdminActivityLogItem("log_6", "Sanjay Nambiar", "Changed operating status to OPEN", "Gym Status", "Yesterday, 05:30 AM"),
-        AdminActivityLogItem("log_7", "Kishore Kumar", "Exported monthly revenue report to CSV", "Reports", "22 Sep 2026, 04:20 PM")
+        AdminActivityLogItem("log_6", "Sanjay Nambiar", "Changed operating status to OPEN", "Gym Status", "Yesterday, 05:30 AM")
     )
 
     fun getAdminActivityLogs(): List<AdminActivityLogItem> = sampleActivityLogs
@@ -1132,27 +986,12 @@ object GymOwnerRepository {
     // ----------------------------------------------------
     fun processScannedQrPayload(payload: String, formatName: String = "QR Code"): ScannedQrResult {
         val trimmed = payload.trim()
+        // IDs and emails must match a whole token, so "abc1" does not match customer "c1"
+        val tokens = trimmed.split(Regex("[^A-Za-z0-9@._+]+")).filter { it.isNotEmpty() }
+        val digitsOnly = trimmed.filter { it.isDigit() }
+        fun hasToken(value: String) = tokens.any { it.equals(value, ignoreCase = true) }
 
-        // 1. UPI Payment QR Detection
-        if (trimmed.startsWith("upi://pay", ignoreCase = true) || trimmed.contains("pa=") || trimmed.startsWith("BYCE-PAY-", ignoreCase = true)) {
-            val amountRegex = Regex("[?&]am=([0-9.]+)")
-            val payeeRegex = Regex("[?&]pn=([^&]+)")
-            val amount = amountRegex.find(trimmed)?.groupValues?.getOrNull(1)?.toDoubleOrNull() ?: 1499.0
-            val payee = payeeRegex.find(trimmed)?.groupValues?.getOrNull(1)?.replace("%20", " ") ?: "Iron House Fitness"
-
-            return ScannedQrResult(
-                rawPayload = trimmed,
-                type = ScannedQrType.PAYMENT_UPI,
-                title = "UPI Payment QR Code",
-                subtitle = "Payee: $payee · ₹${amount.toInt()}",
-                badgeText = "💳 Verified UPI Payment",
-                amount = amount,
-                formatName = formatName,
-                isRecognizedGymEntity = true
-            )
-        }
-
-        // 2. Gym Facility / Locker QR
+        // 1. Gym Facility / Locker QR
         if (trimmed.startsWith("BYCE-GYM-", ignoreCase = true)) {
             return ScannedQrResult(
                 rawPayload = trimmed,
@@ -1165,19 +1004,23 @@ object GymOwnerRepository {
             )
         }
 
-        // 3. Booking QR Pass
-        if (trimmed.startsWith("BYCE-BOOKING-", ignoreCase = true) || trimmed.contains("Booking", ignoreCase = true)) {
-            val matchedBooking = sampleBookings.firstOrNull { 
-                trimmed.contains(it.customerName, ignoreCase = true) || trimmed.contains(it.id, ignoreCase = true)
-            } ?: sampleBookings.first()
-
+        // 2. Booking QR Pass
+        val matchedBooking = if (trimmed.startsWith("BYCE-BOOKING-", ignoreCase = true)) {
+            sampleBookings.firstOrNull { hasToken(it.id) }
+                ?: sampleBookings.firstOrNull { trimmed.contains(it.customerName, ignoreCase = true) }
+        } else {
+            null
+        }
+        if (matchedBooking != null) {
+            val bookingCustomer = sampleCustomers.firstOrNull { it.name.equals(matchedBooking.customerName, ignoreCase = true) }
             return ScannedQrResult(
                 rawPayload = trimmed,
                 type = ScannedQrType.BOOKING_PASS,
                 title = matchedBooking.customerName,
                 subtitle = "${matchedBooking.shift} (${matchedBooking.time})",
-                badgeText = "📅 Slot Reservation Verified",
-                customerId = matchedBooking.id,
+                badgeText = if (matchedBooking.status.equals("Cancelled", ignoreCase = true)) "⚠️ Booking Cancelled" else "📅 Slot Reservation Found",
+                customerId = bookingCustomer?.id,
+                bookingId = matchedBooking.id,
                 customerName = matchedBooking.customerName,
                 membershipPlan = matchedBooking.membershipPlan,
                 status = matchedBooking.status,
@@ -1188,16 +1031,17 @@ object GymOwnerRepository {
             )
         }
 
-        // 4. Member Check-in QR Pass / Digital ID
+        // 3. Member Check-in QR Pass / Digital ID
         val matchedCustomer = sampleCustomers.firstOrNull { customer ->
+            val phoneDigits = customer.phone.filter { it.isDigit() }
             trimmed.contains(customer.name, ignoreCase = true) ||
-            trimmed.contains(customer.id, ignoreCase = true) ||
-            trimmed.contains(customer.email, ignoreCase = true) ||
-            trimmed.contains(customer.phone.replace(" ", ""))
+            hasToken(customer.id) ||
+            hasToken(customer.email) ||
+            (phoneDigits.length >= 10 && digitsOnly.contains(phoneDigits.takeLast(10)))
         }
 
-        if (matchedCustomer != null || trimmed.startsWith("BYCE-MEMBER-", ignoreCase = true) || trimmed.startsWith("BYCE-CHECKIN-", ignoreCase = true) || trimmed.contains("MEM-", ignoreCase = true)) {
-            val cust = matchedCustomer ?: sampleCustomers.first()
+        if (matchedCustomer != null) {
+            val cust = matchedCustomer
             val activeShift = when {
                 trimmed.contains("Evening", ignoreCase = true) -> "Evening Shift"
                 trimmed.contains("Night", ignoreCase = true) -> "Night Shift"
@@ -1221,38 +1065,56 @@ object GymOwnerRepository {
             )
         }
 
-        // 5. Universal Barcode / URL / Plain Text Code
+        // 4. Unrecognized code: barcode, URL, UPI, or a pass that matches no member or booking
         val isUrl = trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)
         return ScannedQrResult(
             rawPayload = trimmed,
             type = ScannedQrType.UNIVERSAL_CODE,
-            title = if (isUrl) "Web Link / URL Code" else "Universal Barcode / Code",
+            title = if (isUrl) "Web Link / URL Code" else "Unrecognized Code",
             subtitle = if (trimmed.length > 50) trimmed.take(47) + "..." else trimmed,
-            badgeText = "🌐 $formatName Scanned",
+            badgeText = "⚠️ No matching member or booking",
             formatName = formatName,
             isRecognizedGymEntity = false
         )
     }
 
-    fun confirmQrCheckIn(result: ScannedQrResult): AttendanceItem {
-        val name = result.customerName ?: "Member"
-        val custId = result.customerId ?: "c_${System.currentTimeMillis() % 1000}"
-        val plan = result.membershipPlan ?: "Standard Pass"
-        
-        val record = recordCheckIn(custId, name, plan)
-        
-        // Add alert notification
-        addNotification(
-            NotificationItem(
-                id = "notif_scan_${System.currentTimeMillis()}",
-                title = "QR Scanner Check-in",
-                message = "$name (${result.shift ?: "Shift"}) checked in successfully via Camera QR Scanner.",
-                type = "Attendance",
-                timestamp = "Just now",
-                isRead = false
-            )
+    // Eligibility for a scan result; unrecognized scans are always blocked
+    fun evaluateScanCheckIn(result: ScannedQrResult): CheckInCheck {
+        if (!result.isRecognizedGymEntity) {
+            return CheckInCheck(CheckInEligibility.BLOCKED, "This code doesn't match any member or booking.")
+        }
+        return when {
+            result.type == ScannedQrType.BOOKING_PASS && result.bookingId != null -> evaluateBookingCheckIn(result.bookingId)
+            result.type == ScannedQrType.MEMBER_CHECKIN && result.customerId != null -> evaluateMemberCheckIn(result.customerId)
+            else -> CheckInCheck(CheckInEligibility.BLOCKED, "This code isn't a member or booking pass.")
+        }
+    }
+
+    fun confirmQrCheckIn(result: ScannedQrResult, reason: String? = null): CheckInOutcome {
+        val check = evaluateScanCheckIn(result)
+        if (check.customer == null && check.booking == null) {
+            return CheckInOutcome.Rejected(check.message)
+        }
+        val outcome = checkIn(
+            customerId = check.customer?.id,
+            bookingId = check.booking?.id,
+            reason = reason,
+            source = "QR scanner"
         )
-        logAdminAction("Kishore Kumar", "Scanner check-in recorded for $name ($plan)", "QR Scanner")
-        return record
+        if (outcome is CheckInOutcome.Success) {
+            val visit = outcome.record
+            addNotification(
+                NotificationItem(
+                    id = "notif_scan_${System.currentTimeMillis()}",
+                    title = "QR Scanner Check-in",
+                    message = "${visit.customerName} (${result.shift ?: "Shift"}) checked in successfully via Camera QR Scanner.",
+                    type = "Attendance",
+                    timestamp = "Just now",
+                    isRead = false
+                )
+            )
+            logAdminAction("Kishore Kumar", "Scanner check-in recorded for ${visit.customerName} (${visit.membershipPlan})", "QR Scanner")
+        }
+        return outcome
     }
 }

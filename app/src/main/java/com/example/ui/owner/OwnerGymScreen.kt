@@ -30,9 +30,14 @@ import com.example.data.services.GymOwnerRepository
 import com.example.ui.components.*
 import com.example.ui.theme.*
 
+enum class GymTab(val label: String) {
+    PROFILE("Profile"),
+    CHECK_IN_QR("Check-in QR")
+}
+
 @Composable
 fun OwnerGymScreen(
-    initialTab: String = "Profile",
+    initialTab: GymTab = GymTab.PROFILE,
     modifier: Modifier = Modifier
 ) {
     var activeSubTab by remember { mutableStateOf(initialTab) }
@@ -60,7 +65,7 @@ fun OwnerGymScreen(
         ) {
             Column {
                 Text(
-                    text = "FACILITY & GEO-LOCATION",
+                    text = "FACILITY",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = TextSubtle,
@@ -91,12 +96,12 @@ fun OwnerGymScreen(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Subtabs: Profile | Location & Map | IoT Telemetry | Check-in QR
+        // Subtabs: Profile | Check-in QR
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            listOf("Profile", "Location & Map", "IoT Telemetry", "Check-in QR").forEach { tab ->
+            GymTab.entries.forEach { tab ->
                 val isSelected = activeSubTab == tab
                 Box(
                     modifier = Modifier
@@ -108,7 +113,7 @@ fun OwnerGymScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = tab,
+                        text = tab.label,
                         fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         color = if (isSelected) TextWhite else TextMuted
@@ -119,7 +124,7 @@ fun OwnerGymScreen(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        if (activeSubTab == "Profile") {
+        if (activeSubTab == GymTab.PROFILE) {
             // ----------------------------------------------------
             // FEATURE 12 & 15: GYM OPERATING STATUS & VISIBILITY
             // ----------------------------------------------------
@@ -185,8 +190,9 @@ fun OwnerGymScreen(
                             Text(text = "Operating Hours", fontSize = 11.sp, color = ByceCoolGray)
                             Text(text = "${operatingStatus.openingTime} - ${operatingStatus.closingTime}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextWhite)
                         }
+                        // Read-only: listing status is set by BYCE, not the partner
                         Column(horizontalAlignment = Alignment.End) {
-                            Text(text = "Platform Visibility", fontSize = 11.sp, color = ByceCoolGray)
+                            Text(text = "BYCE Listing", fontSize = 11.sp, color = ByceCoolGray)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 OwnerStatusBadge(status = operatingStatus.visibilityStatus)
                             }
@@ -195,7 +201,7 @@ fun OwnerGymScreen(
 
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Listing visibility requires Super Admin approval to modify.",
+                        text = "Managed by BYCE. Contact BYCE support to change your listing.",
                         fontSize = 10.sp,
                         color = TextMuted
                     )
@@ -367,392 +373,8 @@ fun OwnerGymScreen(
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(text = "${gymProfile.address}\n${gymProfile.city}, ${gymProfile.district}\n${gymProfile.state} - ${gymProfile.pincode}", fontSize = 13.sp, color = TextWhite, lineHeight = 19.sp)
-                }
-            }
-        } else if (activeSubTab == "Location & Map") {
-            // Gym Location & Map View with BYCE Kettlebell Pin Logo
-            var isSatelliteMode by remember { mutableStateOf(false) }
-            var zoomLevel by remember { mutableStateOf(16) }
-
-            LiquidGlassCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "BYCE DISCOVERY GEO-LOCATION",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextSubtle,
-                                letterSpacing = 0.5.sp
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Live Map & Positioning",
-                                fontSize = 17.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextWhite
-                            )
-                        }
-
-                        // Satellite toggle pill
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSatelliteMode) StatusActiveGreenBg else Color(0x20FFFFFF))
-                                .clickable { isSatelliteMode = !isSatelliteMode }
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = if (isSatelliteMode) "Satellite" else "Dark Map",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isSatelliteMode) StatusActiveGreen else TextWhite
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Map View Container with BYCE Kettlebell Pin Logo inside
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp)
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(
-                                if (isSatelliteMode) {
-                                    Brush.verticalGradient(listOf(Color(0xFF0F261C), Color(0xFF0A1812)))
-                                } else {
-                                    Brush.verticalGradient(listOf(Color(0xFF141F1A), Color(0xFF0D1411)))
-                                }
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Simulated Map Grid Lines & Roads
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            repeat(6) {
-                                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x0CFFFFFF)))
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            repeat(4) {
-                                Box(modifier = Modifier.fillMaxHeight().width(1.dp).background(Color(0x0CFFFFFF)))
-                            }
-                        }
-
-                        // Glowing Radar Pulse Circles around Logo Pin
-                        Box(
-                            modifier = Modifier
-                                .size(140.dp)
-                                .clip(CircleShape)
-                                .background(NeonGreen.copy(alpha = 0.08f))
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(90.dp)
-                                .clip(CircleShape)
-                                .background(NeonGreen.copy(alpha = 0.15f))
-                        )
-
-                        // Center Map Pin with authentic BYCE Kettlebell Logo
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(62.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF161415))
-                                    .padding(4.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.byce_kettlebell_pin),
-                                    contentDescription = "BYCE Center Pin",
-                                    modifier = Modifier
-                                        .size(54.dp)
-                                        .clip(CircleShape)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0xE0161415))
-                                    .padding(horizontal = 10.dp, vertical = 5.dp)
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(NeonGreen))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Iron House Fitness · Verified",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = TextWhite
-                                    )
-                                }
-                            }
-                        }
-
-                        // Map Control Floating Overlay (Zoom in / out)
-                        Column(
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0x90000000))
-                                    .clickable { zoomLevel = (zoomLevel + 1).coerceAtMost(20) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = "Zoom In", tint = TextWhite, modifier = Modifier.size(16.dp))
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0x90000000))
-                                    .clickable { zoomLevel = (zoomLevel - 1).coerceAtLeast(10) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Remove, contentDescription = "Zoom Out", tint = TextWhite, modifier = Modifier.size(16.dp))
-                            }
-                        }
-
-                        // Top Left GPS & Accuracy Tag
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .padding(12.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0x80000000))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "GPS Accuracy: ±2m (Zoom: ${zoomLevel}x)",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NeonGreen
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Coordinates Display
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(text = "Latitude", fontSize = 11.sp, color = ByceCoolGray)
-                            Text(text = "${gymProfile.latitude}° N", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextWhite)
-                        }
-                        Column {
-                            Text(text = "Longitude", fontSize = 11.sp, color = ByceCoolGray)
-                            Text(text = "${gymProfile.longitude}° E", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextWhite)
-                        }
-                        Column {
-                            Text(text = "Discovery Status", fontSize = 11.sp, color = ByceCoolGray)
-                            OwnerStatusBadge(status = "Active")
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x18FFFFFF)))
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Text(
-                        text = "Full Address",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextSubtle
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "${gymProfile.address}, ${gymProfile.city}, ${gymProfile.district}, ${gymProfile.state} - ${gymProfile.pincode}",
-                        fontSize = 13.sp,
-                        color = TextMuted,
-                        lineHeight = 18.sp
-                    )
-                }
-            }
-        } else if (activeSubTab == "IoT Telemetry") {
-            // ----------------------------------------------------
-            // 6. IOT HARDWARE & SMART MACHINERY TELEMETRY SYNC
-            // ----------------------------------------------------
-            val telemetryList = remember { GymOwnerRepository.getIoTTelemetry() }
-            var isSyncing by remember { mutableStateOf(false) }
-
-            LiquidGlassCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "IOT HARDWARE TELEMETRY",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = TextSubtle,
-                                letterSpacing = 1.sp
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Connected Smart Machinery",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextWhite
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSyncing) StatusActiveGreenBg else Color(0x25FFFFFF))
-                                .clickable { isSyncing = true }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Sync, contentDescription = "Sync", tint = if (isSyncing) StatusActiveGreen else TextWhite, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = if (isSyncing) "Synced ✓" else "Live Sync",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isSyncing) StatusActiveGreen else TextWhite
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Real-time usage frequency, motor hours, belt wear %, and predictive maintenance tracking.",
-                        fontSize = 12.sp,
-                        color = ByceCoolGray
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    telemetryList.forEach { machine ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(Color(0x18FFFFFF))
-                                .padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = machine.machineName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(
-                                                when (machine.operationalStatus) {
-                                                    "Optimal" -> StatusActiveGreenBg
-                                                    "Heavy Load" -> Color(0x30FFA726)
-                                                    else -> StatusExpiredRedBg
-                                                }
-                                            )
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = machine.operationalStatus,
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = when (machine.operationalStatus) {
-                                                "Optimal" -> StatusActiveGreen
-                                                "Heavy Load" -> Color(0xFFFFA726)
-                                                else -> StatusExpiredRed
-                                            }
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(3.dp))
-                                Text(
-                                    text = "S/N: ${machine.serialNumber} · ${machine.dailyMotorHours}h today · ${machine.totalKmRun.toInt()} KM lifetime",
-                                    fontSize = 11.sp,
-                                    color = ByceCoolGray
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-
-                                // Wear level bar
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "Wear: ${machine.wearPercentage}%", fontSize = 10.sp, color = TextMuted)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(5.dp)
-                                            .clip(RoundedCornerShape(3.dp))
-                                            .background(Color(0x20FFFFFF))
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth(machine.wearPercentage / 100f)
-                                                .fillMaxHeight()
-                                                .clip(RoundedCornerShape(3.dp))
-                                                .background(
-                                                    if (machine.wearPercentage > 75) StatusExpiredRed
-                                                    else if (machine.wearPercentage > 40) Color(0xFFFFA726)
-                                                    else StatusActiveGreen
-                                                )
-                                        )
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(text = "Service Due", fontSize = 10.sp, color = TextMuted)
-                                Text(
-                                    text = machine.nextServiceDue,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (machine.nextServiceDue.contains("Immediate")) StatusExpiredRed else TextWhite
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(text = "Coordinates: ${gymProfile.latitude}° N, ${gymProfile.longitude}° E", fontSize = 12.sp, color = ByceCoolGray)
                 }
             }
         } else {
@@ -867,7 +489,7 @@ fun OwnerGymScreen(
                         Spacer(modifier = Modifier.height(14.dp))
                     }
 
-                    // QR Action Buttons
+                    // QR Action Buttons (disabled until printing/download is implemented)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -876,18 +498,14 @@ fun OwnerGymScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Color(0x28FFFFFF))
-                                .clickable {
-                                    qrActionNotice = "✓ Printable QR PDF generated for front desk standee."
-                                    GymOwnerRepository.logAdminAction("Kishore Kumar", "Generated printable QR display", "Gym QR")
-                                }
+                                .background(Color(0x12FFFFFF))
                                 .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Print, contentDescription = null, tint = TextWhite, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Print, contentDescription = null, tint = TextMuted, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = "Print Standee", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                                Text(text = "Print Standee", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
                             }
                         }
 
@@ -895,21 +513,25 @@ fun OwnerGymScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Color(0x28FFFFFF))
-                                .clickable {
-                                    qrActionNotice = "✓ High-res QR graphic downloaded to device storage."
-                                    GymOwnerRepository.logAdminAction("Kishore Kumar", "Downloaded QR UI graphic", "Gym QR")
-                                }
+                                .background(Color(0x12FFFFFF))
                                 .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Download, contentDescription = null, tint = TextWhite, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Download, contentDescription = null, tint = TextMuted, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = "Download UI", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                                Text(text = "Download QR", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Print and download: Not available yet",
+                        fontSize = 11.sp,
+                        color = TextMuted,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
                     Spacer(modifier = Modifier.height(10.dp))
 

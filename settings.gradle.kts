@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Byce Partner"
+rootProject.name = "BYCE Partner"
 
 include(":app")

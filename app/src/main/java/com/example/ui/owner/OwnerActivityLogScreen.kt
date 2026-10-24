@@ -123,7 +123,7 @@ fun OwnerActivityLogScreen(
                     query = searchQuery,
                     onQueryChange = { searchQuery = it },
                     placeholder = "Search admin name, action, or module...",
-                    filterOptions = listOf("All", "Attendance", "QR", "Customers", "Payments", "Plans"),
+                    filterOptions = listOf("All", "Attendance", "QR", "Customers", "Bookings", "Staff"),
                     selectedFilter = selectedFilter,
                     onFilterSelected = { selectedFilter = it }
                 )

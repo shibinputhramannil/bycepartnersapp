@@ -33,6 +33,15 @@ import com.example.data.services.GymOwnerRepository
 import com.example.ui.components.*
 import com.example.ui.theme.*
 
+// Modifier.weight() throws for 0 or NaN, so zero-count segments are dropped.
+// Raw counts are used as weights; Compose does not need them to sum to 1.
+internal fun <T> nonZeroSegments(segments: List<Pair<Int, T>>): List<Pair<Float, T>> =
+    segments.filter { it.first > 0 }.map { it.first.toFloat() to it.second }
+
+// Bar height as a fraction of the tallest bar; safe when every value is 0
+internal fun chartBarRatio(value: Double, max: Double, minRatio: Float): Float =
+    if (max <= 0.0 || value.isNaN()) minRatio else (value / max).toFloat().coerceIn(minRatio, 1f)
+
 @Composable
 fun OwnerDashboardScreen(
     onNavigateToCustomers: () -> Unit = {},
@@ -138,7 +147,7 @@ fun OwnerDashboardScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // ----------------------------------------------------
-            // HERO: AI QR & BARCODE SCANNER (AUTO CAMERA OPEN)
+            // HERO: QR & BARCODE SCANNER (AUTO CAMERA OPEN)
             // ----------------------------------------------------
             LiquidGlassCard(
                 modifier = Modifier
@@ -191,7 +200,7 @@ fun OwnerDashboardScreen(
                             Column {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = "AI QR SCANNER",
+                                        text = "QR SCANNER",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.ExtraBold,
                                         color = StatusActiveGreen,
@@ -221,7 +230,7 @@ fun OwnerDashboardScreen(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Tap to open camera · Detects Passes, Bookings, UPI & Barcodes",
+                                    text = "Tap to open camera · Detects Passes, Bookings & Barcodes",
                                     fontSize = 11.sp,
                                     color = TextMuted,
                                     maxLines = 1
@@ -258,6 +267,7 @@ fun OwnerDashboardScreen(
                 actionLabel = "Live Attendance",
                 onActionClick = onNavigateToAttendance
             )
+            DemoDataNotice(text = "Demo data—not live: sample figures for today.")
             Spacer(modifier = Modifier.height(8.dp))
 
             LiquidGlassCard(
@@ -325,8 +335,11 @@ fun OwnerDashboardScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         // ----------------------------------------------------
-        // KPI METRIC CARDS (2x2 Grid)
+        // KPI METRIC CARDS (2x2 Grid) - sample values until a backend exists
         // ----------------------------------------------------
+        DemoDataNotice(text = "Demo data—not live: sample KPI figures.")
+        Spacer(modifier = Modifier.height(10.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(14.dp)
@@ -372,8 +385,11 @@ fun OwnerDashboardScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         // ----------------------------------------------------
-        // FEATURE 11: GYM CAPACITY & LIVE OCCUPANCY
+        // FEATURE 11: GYM CAPACITY & OCCUPANCY (sample values)
         // ----------------------------------------------------
+        DemoDataNotice(text = "Demo data—not live: sample occupancy figures.")
+        Spacer(modifier = Modifier.height(10.dp))
+
         LiquidGlassCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp)
@@ -554,8 +570,8 @@ fun OwnerDashboardScreen(
                 modifier = Modifier.weight(1f)
             )
             QuickActionButton(
-                label = "Create Plan",
-                icon = Icons.Default.AddCard,
+                label = "Passes",
+                icon = Icons.Default.CardMembership,
                 onClick = onNavigateToPlans,
                 modifier = Modifier.weight(1f)
             )
@@ -577,6 +593,7 @@ fun OwnerDashboardScreen(
             actionLabel = "Detailed Report",
             onActionClick = onNavigateToPayments
         )
+        DemoDataNotice(text = "Demo data—not live: sample revenue chart.")
         Spacer(modifier = Modifier.height(8.dp))
 
         LiquidGlassCard(
@@ -617,7 +634,7 @@ fun OwnerDashboardScreen(
                 Spacer(modifier = Modifier.height(18.dp))
 
                 // Bar Chart Visualizer
-                val maxAmount = revenueData.maxOfOrNull { it.amount } ?: 1.0
+                val maxAmount = revenueData.maxOfOrNull { it.amount } ?: 0.0
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -627,7 +644,7 @@ fun OwnerDashboardScreen(
                     verticalAlignment = Alignment.Bottom
                 ) {
                     revenueData.forEach { point ->
-                        val barRatio = (point.amount / maxAmount).toFloat().coerceIn(0.1f, 1.0f)
+                        val barRatio = chartBarRatio(point.amount, maxAmount, minRatio = 0.1f)
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Bottom,
@@ -674,6 +691,7 @@ fun OwnerDashboardScreen(
             actionLabel = "All Memberships",
             onActionClick = onNavigateToMemberships
         )
+        DemoDataNotice(text = "Demo data—not live: sample membership counts.")
         Spacer(modifier = Modifier.height(8.dp))
 
         LiquidGlassCard(
@@ -698,18 +716,25 @@ fun OwnerDashboardScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Distribution Bar
-                val total = (membershipOverview.active + membershipOverview.pending + membershipOverview.expired + membershipOverview.cancelled).toFloat()
+                // Distribution Bar (an empty track when every count is 0)
+                val segments = nonZeroSegments(
+                    listOf(
+                        membershipOverview.active to StatusActiveGreen,
+                        membershipOverview.pending to StatusPendingAmber,
+                        membershipOverview.expired to StatusExpiredRed,
+                        membershipOverview.cancelled to StatusCancelledGray
+                    )
+                )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(10.dp)
                         .clip(RoundedCornerShape(5.dp))
+                        .background(Color(0x20FFFFFF))
                 ) {
-                    Box(modifier = Modifier.weight(membershipOverview.active / total).fillMaxHeight().background(StatusActiveGreen))
-                    Box(modifier = Modifier.weight(membershipOverview.pending / total).fillMaxHeight().background(StatusPendingAmber))
-                    Box(modifier = Modifier.weight(membershipOverview.expired / total).fillMaxHeight().background(StatusExpiredRed))
-                    Box(modifier = Modifier.weight(membershipOverview.cancelled / total).fillMaxHeight().background(StatusCancelledGray))
+                    segments.forEach { (weight, color) ->
+                        Box(modifier = Modifier.weight(weight).fillMaxHeight().background(color))
+                    }
                 }
             }
         }
@@ -802,6 +827,7 @@ fun OwnerDashboardScreen(
             actionLabel = "View All",
             onActionClick = onNavigateToPayments
         )
+        DemoDataNotice(text = "Demo data, not live BYCE payments.")
         Spacer(modifier = Modifier.height(8.dp))
 
         pendingPaymentsList.forEach { pending ->
@@ -901,6 +927,7 @@ fun OwnerDashboardScreen(
             actionLabel = "View All",
             onActionClick = onNavigateToPayments
         )
+        DemoDataNotice(text = "Demo data, not live BYCE payments.")
         Spacer(modifier = Modifier.height(8.dp))
 
         recentPayments.forEach { payment ->
