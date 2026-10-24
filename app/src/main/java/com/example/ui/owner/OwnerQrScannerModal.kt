@@ -64,7 +64,7 @@ import java.util.concurrent.Executors
 
 /**
  * Universal Camera QR & Barcode Scanner for BYCE Gym Dashboard
- * Auto-opens camera, scans all 1D/2D barcodes, QR passes, bookings, and UPI payments.
+ * Auto-opens camera and scans 1D/2D barcodes to match member passes and bookings.
  */
 @Composable
 fun OwnerQrScannerModal(
@@ -385,7 +385,7 @@ fun OwnerQrScannerModal(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "⚡ Real-time Scan: Member QRs · Booking Passes · UPI · 1D/2D Barcodes",
+                        text = "⚡ Real-time Scan: Member QRs · Booking Passes · 1D/2D Barcodes",
                         fontSize = 10.sp,
                         color = Color(0xCCFFFFFF),
                         fontWeight = FontWeight.Medium
@@ -394,7 +394,7 @@ fun OwnerQrScannerModal(
             }
 
             // ----------------------------------------------------
-            // 4. BOTTOM FLOATING CONTROLS & INSTANT TEST SIMULATOR
+            // 4. BOTTOM FLOATING CONTROLS
             // ----------------------------------------------------
             Column(
                 modifier = Modifier
@@ -402,106 +402,6 @@ fun OwnerQrScannerModal(
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 24.dp, start = 16.dp, end = 16.dp)
             ) {
-                // Quick Test Codes Bar (Allows instant testing with 1 tap!)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xCC111827))
-                        .padding(12.dp)
-                ) {
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Speed, contentDescription = null, tint = StatusActiveGreen, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "FAST TEST SIMULATOR",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = StatusActiveGreen,
-                                    letterSpacing = 0.5.sp
-                                )
-                            }
-                            
-                            Text(
-                                text = "Tap code to test scan",
-                                fontSize = 10.sp,
-                                color = TextMuted
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            // Test 1: Rahul Menon Member Pass
-                            QuickTestCodeChip(
-                                label = "👤 Rahul (Pass)",
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    val res = GymOwnerRepository.processScannedQrPayload(
-                                        "BYCE-MEMBER-Rahul Menon-c1-YEARLY-MEM-8421",
-                                        "QR Code"
-                                    )
-                                    scannedResult = res
-                                    isScanningActive = false
-                                }
-                            )
-
-                            // Test 2: Ananya Nair Booking Pass
-                            QuickTestCodeChip(
-                                label = "📅 Ananya (Booking)",
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    val res = GymOwnerRepository.processScannedQrPayload(
-                                        "BYCE-BOOKING-b2-Ananya Nair-Night Shift-08:00 PM",
-                                        "QR Code"
-                                    )
-                                    scannedResult = res
-                                    isScanningActive = false
-                                }
-                            )
-
-                            // Test 3: UPI Payment QR
-                            QuickTestCodeChip(
-                                label = "💳 UPI Pay",
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    val res = GymOwnerRepository.processScannedQrPayload(
-                                        "upi://pay?pa=ironhouse@upi&pn=Iron%20House%20Fitness&am=1499.00&cu=INR",
-                                        "QR Code"
-                                    )
-                                    scannedResult = res
-                                    isScanningActive = false
-                                }
-                            )
-
-                            // Test 4: Barcode / Link
-                            QuickTestCodeChip(
-                                label = "🌐 Barcode",
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    val res = GymOwnerRepository.processScannedQrPayload(
-                                        "8901030383120-EQUIPMENT-DUMBBELL-SET-40KG",
-                                        "CODE_128"
-                                    )
-                                    scannedResult = res
-                                    isScanningActive = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
                 // Manual Code Input Button
                 Box(
                     modifier = Modifier
@@ -556,7 +456,6 @@ fun OwnerQrScannerModal(
                             imageVector = when (result.type) {
                                 ScannedQrType.MEMBER_CHECKIN -> Icons.Default.Badge
                                 ScannedQrType.BOOKING_PASS -> Icons.Default.EventAvailable
-                                ScannedQrType.PAYMENT_UPI -> Icons.Default.Payment
                                 ScannedQrType.GYM_FACILITY -> Icons.Default.FitnessCenter
                                 ScannedQrType.UNIVERSAL_CODE -> Icons.Default.QrCode
                             },
@@ -623,7 +522,6 @@ fun OwnerQrScannerModal(
                                 when (result.type) {
                                     ScannedQrType.MEMBER_CHECKIN -> Color(0x2510B981)
                                     ScannedQrType.BOOKING_PASS -> Color(0x25F59E0B)
-                                    ScannedQrType.PAYMENT_UPI -> Color(0x256366F1)
                                     else -> Color(0x2564748B)
                                 }
                             )
@@ -636,7 +534,6 @@ fun OwnerQrScannerModal(
                             color = when (result.type) {
                                 ScannedQrType.MEMBER_CHECKIN -> StatusActiveGreen
                                 ScannedQrType.BOOKING_PASS -> StatusPendingAmber
-                                ScannedQrType.PAYMENT_UPI -> Color(0xFF818CF8)
                                 else -> TextWhite
                             }
                         )
@@ -750,9 +647,13 @@ fun OwnerQrScannerModal(
                         Button(
                             onClick = {
                                 val attendanceRecord = GymOwnerRepository.confirmQrCheckIn(result)
-                                checkInSuccessMessage = "✓ ${attendanceRecord.customerName} successfully checked in at ${attendanceRecord.checkInTime}!"
-                                onScannedSuccessfully(result)
-                                Toast.makeText(context, "Check-in Confirmed!", Toast.LENGTH_SHORT).show()
+                                if (attendanceRecord != null) {
+                                    checkInSuccessMessage = "✓ ${attendanceRecord.customerName} successfully checked in at ${attendanceRecord.checkInTime}!"
+                                    onScannedSuccessfully(result)
+                                    Toast.makeText(context, "Check-in Confirmed!", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "This code doesn't match a member or booking", Toast.LENGTH_SHORT).show()
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = StatusActiveGreen),
                             shape = RoundedCornerShape(12.dp),
@@ -768,31 +669,16 @@ fun OwnerQrScannerModal(
                             )
                         }
                     }
-                    ScannedQrType.PAYMENT_UPI -> {
-                        Button(
-                            onClick = {
-                                try {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(result.rawPayload))
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "No UPI app found", Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Payment, contentDescription = null, tint = TextWhite, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Open in UPI App (₹${result.amount?.toInt() ?: 1499})",
-                                color = TextWhite,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
                     else -> {
+                        if (!result.isRecognizedGymEntity) {
+                            Text(
+                                text = "This code doesn't match any member or booking, so it can't be used for check-in.",
+                                fontSize = 12.sp,
+                                color = TextMuted,
+                                lineHeight = 16.sp
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                        }
                         if (result.rawPayload.startsWith("http", ignoreCase = true)) {
                             Button(
                                 onClick = {
@@ -881,7 +767,7 @@ fun OwnerQrScannerModal(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "Type or paste any member ID, booking ID, UPI code, or barcode string to verify.",
+                    text = "Type or paste a member ID, name, email, phone number, or booking pass code to verify.",
                     fontSize = 12.sp,
                     color = TextMuted,
                     lineHeight = 16.sp
@@ -892,7 +778,7 @@ fun OwnerQrScannerModal(
                 OutlinedTextField(
                     value = manualInputText,
                     onValueChange = { manualInputText = it },
-                    placeholder = { Text("e.g. Rahul Menon, c1, MEM-8421, or barcode...", fontSize = 12.sp, color = TextMuted) },
+                    placeholder = { Text("e.g. Rahul Menon, c1, or member email...", fontSize = 12.sp, color = TextMuted) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -1066,33 +952,6 @@ private fun ScannerViewfinderOverlay(
                 strokeWidth = 3.dp.toPx()
             )
         }
-    }
-}
-
-/**
- * Quick Test Code Chip
- */
-@Composable
-private fun QuickTestCodeChip(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0x33FFFFFF))
-            .clickable { onClick() }
-            .padding(vertical = 6.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold,
-            color = TextWhite,
-            maxLines = 1
-        )
     }
 }
 

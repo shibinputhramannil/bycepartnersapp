@@ -287,10 +287,6 @@ fun OwnerPaymentsScreen(
                     items(filteredPendingPayments, key = { it.id }) { pending ->
                         PendingPaymentCardRow(
                             item = pending,
-                            onSendReminder = {
-                                GymOwnerRepository.sendPaymentReminder(pending.id)
-                                reminderToastMessage = "✓ Payment reminder dispatched to ${pending.customerName} via SMS & WhatsApp."
-                            },
                             onRecordPayment = {
                                 paymentToRecordPaid = pending
                             }
@@ -567,25 +563,24 @@ private fun NewPosInvoiceModal(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Disabled until a payment provider is connected
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color(0xFF6B9330), Color(0xFF4E7320))
-                        )
-                    )
-                    .clickable {
-                        if (customerName.isNotBlank() && baseAmount > 0) {
-                            onCreateInvoice(customerName, customerPhone, transactionType, itemName, baseAmount, paymentMode)
-                        }
-                    }
+                    .background(Color(0x12FFFFFF))
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "Generate Tax Invoice & Charge", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                Text(text = "Generate Tax Invoice & Charge", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextMuted)
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Payment processing: Not available yet",
+                fontSize = 11.sp,
+                color = TextMuted
+            )
         }
     }
 }
@@ -661,7 +656,6 @@ private fun PosInvoiceReceiptModal(
 @Composable
 private fun PendingPaymentCardRow(
     item: com.example.data.models.PendingPaymentItem,
-    onSendReminder: () -> Unit,
     onRecordPayment: () -> Unit
 ) {
     val isOverdue = item.status.contains("Overdue", ignoreCase = true) || item.status.contains("Failed", ignoreCase = true)
@@ -742,24 +736,23 @@ private fun PendingPaymentCardRow(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Send Reminder Button
+                    // Send Reminder Button (disabled until SMS/WhatsApp messaging is connected)
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0x20FFFFFF))
-                            .clickable { onSendReminder() }
+                            .background(Color(0x10FFFFFF))
                             .padding(horizontal = 10.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.Send,
-                                contentDescription = "Remind",
-                                tint = TextWhite,
+                                contentDescription = "Remind (not available yet)",
+                                tint = TextMuted,
                                 modifier = Modifier.size(12.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "Remind", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                            Text(text = "Remind · Not available yet", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextMuted)
                         }
                     }
 

@@ -138,7 +138,7 @@ fun OwnerDashboardScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // ----------------------------------------------------
-            // HERO: AI QR & BARCODE SCANNER (AUTO CAMERA OPEN)
+            // HERO: QR & BARCODE SCANNER (AUTO CAMERA OPEN)
             // ----------------------------------------------------
             LiquidGlassCard(
                 modifier = Modifier
@@ -191,7 +191,7 @@ fun OwnerDashboardScreen(
                             Column {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = "AI QR SCANNER",
+                                        text = "QR SCANNER",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.ExtraBold,
                                         color = StatusActiveGreen,
@@ -221,7 +221,7 @@ fun OwnerDashboardScreen(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Tap to open camera · Detects Passes, Bookings, UPI & Barcodes",
+                                    text = "Tap to open camera · Detects Passes, Bookings & Barcodes",
                                     fontSize = 11.sp,
                                     color = TextMuted,
                                     maxLines = 1

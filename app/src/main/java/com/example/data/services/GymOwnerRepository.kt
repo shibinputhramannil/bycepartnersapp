@@ -223,7 +223,7 @@ object GymOwnerRepository {
             reminderMinutesBefore = 30,
             reminderScheduled = true,
             reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Scheduled (Triggers at 05:30 PM via Gmail)"
+            reminderStatus = "Not sent"
         ),
         BookingItem(
             id = "b2",
@@ -239,7 +239,7 @@ object GymOwnerRepository {
             reminderMinutesBefore = 30,
             reminderScheduled = true,
             reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Scheduled (Triggers at 07:30 PM via Gmail)"
+            reminderStatus = "Not sent"
         ),
         BookingItem(
             id = "b3",
@@ -255,7 +255,7 @@ object GymOwnerRepository {
             reminderMinutesBefore = 30,
             reminderScheduled = true,
             reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Sent via Gmail at 05:30 AM"
+            reminderStatus = "Not sent"
         ),
         BookingItem(
             id = "b4",
@@ -271,7 +271,7 @@ object GymOwnerRepository {
             reminderMinutesBefore = 30,
             reminderScheduled = true,
             reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Sent via Gmail at 07:30 AM"
+            reminderStatus = "Not sent"
         ),
         BookingItem(
             id = "b5",
@@ -287,7 +287,7 @@ object GymOwnerRepository {
             reminderMinutesBefore = 30,
             reminderScheduled = true,
             reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Scheduled (Triggers at 06:00 AM via Gmail)"
+            reminderStatus = "Not sent"
         ),
         BookingItem(
             id = "b6",
@@ -436,7 +436,7 @@ object GymOwnerRepository {
                 reminderMinutesBefore = 30,
                 reminderScheduled = true,
                 reminderDeliveryChannel = "Gmail",
-                reminderStatus = "Scheduled (30m before session via Gmail)"
+                reminderStatus = "Not sent"
             )
             sampleBookings.add(0, newBooking)
 
@@ -561,7 +561,7 @@ object GymOwnerRepository {
     }
 
     // ----------------------------------------------------
-    // 3 & 4. TRAINER & SESSION SCHEDULING + PROXY BROADCAST
+    // 3. TRAINER & SESSION SCHEDULING
     // ----------------------------------------------------
     private val sampleWorkoutSessions = mutableListOf(
         GroupWorkoutSession("ws_1", "HRX High-Intensity Training", "HRX", "Coach Vicky", "In-House", "Studio 1 (Main Arena)", "06:30 AM - 07:20 AM", 50, 25, 22, "Extreme", "Scheduled"),
@@ -571,45 +571,7 @@ object GymOwnerRepository {
         GroupWorkoutSession("ws_5", "S&C Compound Strength", "Strength", "Coach Sanjay", "In-House", "Strength Floor Zone A", "07:00 PM - 07:50 PM", 50, 18, 16, "Extreme", "Scheduled")
     )
 
-    private val sampleProxyBroadcasts = mutableListOf<ProxyTrainerBroadcast>()
-
     fun getWorkoutSessions(): List<GroupWorkoutSession> = sampleWorkoutSessions
-
-    fun getProxyBroadcasts(): List<ProxyTrainerBroadcast> = sampleProxyBroadcasts
-
-    fun broadcastProxyTrainerSearch(sessionId: String): Boolean {
-        val index = sampleWorkoutSessions.indexOfFirst { it.id == sessionId }
-        if (index != -1) {
-            val s = sampleWorkoutSessions[index]
-            sampleWorkoutSessions[index] = s.copy(
-                proxyBroadcastActive = true,
-                status = "Proxy Search Active"
-            )
-            val broadcast = ProxyTrainerBroadcast(
-                id = "bc_${System.currentTimeMillis()}",
-                sessionId = s.id,
-                sessionTitle = s.title,
-                originalCoach = s.coachName,
-                timeSlot = s.timeSlot,
-                notifiedTrainersCount = 14,
-                status = "Broadcast Active"
-            )
-            sampleProxyBroadcasts.add(0, broadcast)
-            logAdminAction("Emergency Dispatcher", "Broadcasted emergency substitute request for '${s.title}' at ${s.timeSlot} to 14 local certified trainers.", "Staff")
-            addNotification(
-                NotificationItem(
-                    id = "notif_bc_${System.currentTimeMillis()}",
-                    title = "Proxy Trainer Broadcast Sent",
-                    message = "Emergency substitute opportunity broadcasted for '${s.title}' (${s.timeSlot}). 14 trainers notified.",
-                    type = "System",
-                    timestamp = "Just now",
-                    isRead = false
-                )
-            )
-            return true
-        }
-        return false
-    }
 
     fun assignProxyTrainer(sessionId: String, substituteCoach: String): Boolean {
         val index = sampleWorkoutSessions.indexOfFirst { it.id == sessionId }
@@ -617,7 +579,6 @@ object GymOwnerRepository {
             val s = sampleWorkoutSessions[index]
             sampleWorkoutSessions[index] = s.copy(
                 coachName = substituteCoach,
-                proxyBroadcastActive = false,
                 status = "Substitute Assigned",
                 assignedProxyCoach = substituteCoach
             )
@@ -664,19 +625,6 @@ object GymOwnerRepository {
     fun dismissTrialBuzzer() {
         activeTrialAlert = null
     }
-
-    // ----------------------------------------------------
-    // 6. IOT MACHINERY TELEMETRY SYNC
-    // ----------------------------------------------------
-    private val sampleIoTTelemetry = mutableListOf(
-        SmartEquipmentTelemetry("iot_1", "Technogym Skillrun Pro #01", "Treadmill", "TG-RUN-9842", "Optimal", 14820.5, 8.4, 240, 18, "In 45 Days"),
-        SmartEquipmentTelemetry("iot_2", "Technogym Skillrun Pro #02", "Treadmill", "TG-RUN-9843", "Heavy Load", 19450.2, 11.2, 280, 72, "In 8 Days"),
-        SmartEquipmentTelemetry("iot_3", "LifeFitness Dual Cable Tower #01", "Cable Machine", "LF-CBL-4421", "Optimal", 0.0, 9.6, 0, 24, "In 60 Days"),
-        SmartEquipmentTelemetry("iot_4", "Matrix Rower Matrix CXP #01", "Rower", "MX-ROW-1102", "Optimal", 4520.0, 5.1, 140, 12, "In 90 Days"),
-        SmartEquipmentTelemetry("iot_5", "Precor Commercial Elliptical #03", "Elliptical", "PC-ELP-7714", "Service Due", 22100.0, 12.8, 220, 88, "Immediate Action")
-    )
-
-    fun getIoTTelemetry(): List<SmartEquipmentTelemetry> = sampleIoTTelemetry
 
     // ----------------------------------------------------
     // 8. POINT OF SALE (POS) & BILLING TRANSACTIONS
@@ -776,46 +724,17 @@ object GymOwnerRepository {
         )
     }
 
-    fun sendBookingGmailReminder(bookingId: String): Boolean {
-        val index = sampleBookings.indexOfFirst { it.id == bookingId }
-        if (index != -1) {
-            val b = sampleBookings[index]
-            sampleBookings[index] = b.copy(
-                reminderScheduled = true,
-                reminderStatus = "Sent via Gmail (30m pre-shift alert delivered)"
-            )
-            logAdminAction(
-                "Kishore Kumar",
-                "Dispatched 30m pre-shift Gmail reminder to ${b.customerName} (${b.customerEmail}) for ${b.shift} slot ${b.time}",
-                "Bookings"
-            )
-            addNotification(
-                NotificationItem(
-                    id = "notif_${System.currentTimeMillis()}",
-                    title = "Gmail Shift Reminder Sent",
-                    message = "30-min reminder delivered to ${b.customerName} (${b.customerEmail}) for ${b.shift} (${b.time}) via Gmail.",
-                    type = "Reminder",
-                    timestamp = "Just now",
-                    isRead = false
-                )
-            )
-            return true
-        }
-        return false
-    }
-
     fun updateBookingReminderSchedule(bookingId: String, minutesBefore: Int, shift: String) {
         val index = sampleBookings.indexOfFirst { it.id == bookingId }
         if (index != -1) {
             val b = sampleBookings[index]
             sampleBookings[index] = b.copy(
                 shift = shift,
-                reminderMinutesBefore = minutesBefore,
-                reminderStatus = "Scheduled (${minutesBefore}m before $shift via Gmail)"
+                reminderMinutesBefore = minutesBefore
             )
             logAdminAction(
                 "Kishore Kumar",
-                "Updated reminder schedule for ${b.customerName}: $minutesBefore mins before $shift via Gmail",
+                "Moved ${b.customerName}'s booking to $shift",
                 "Bookings"
             )
         }
@@ -1132,27 +1051,12 @@ object GymOwnerRepository {
     // ----------------------------------------------------
     fun processScannedQrPayload(payload: String, formatName: String = "QR Code"): ScannedQrResult {
         val trimmed = payload.trim()
+        // IDs and emails must match a whole token, so "abc1" does not match customer "c1"
+        val tokens = trimmed.split(Regex("[^A-Za-z0-9@._+]+")).filter { it.isNotEmpty() }
+        val digitsOnly = trimmed.filter { it.isDigit() }
+        fun hasToken(value: String) = tokens.any { it.equals(value, ignoreCase = true) }
 
-        // 1. UPI Payment QR Detection
-        if (trimmed.startsWith("upi://pay", ignoreCase = true) || trimmed.contains("pa=") || trimmed.startsWith("BYCE-PAY-", ignoreCase = true)) {
-            val amountRegex = Regex("[?&]am=([0-9.]+)")
-            val payeeRegex = Regex("[?&]pn=([^&]+)")
-            val amount = amountRegex.find(trimmed)?.groupValues?.getOrNull(1)?.toDoubleOrNull() ?: 1499.0
-            val payee = payeeRegex.find(trimmed)?.groupValues?.getOrNull(1)?.replace("%20", " ") ?: "Iron House Fitness"
-
-            return ScannedQrResult(
-                rawPayload = trimmed,
-                type = ScannedQrType.PAYMENT_UPI,
-                title = "UPI Payment QR Code",
-                subtitle = "Payee: $payee · ₹${amount.toInt()}",
-                badgeText = "💳 Verified UPI Payment",
-                amount = amount,
-                formatName = formatName,
-                isRecognizedGymEntity = true
-            )
-        }
-
-        // 2. Gym Facility / Locker QR
+        // 1. Gym Facility / Locker QR
         if (trimmed.startsWith("BYCE-GYM-", ignoreCase = true)) {
             return ScannedQrResult(
                 rawPayload = trimmed,
@@ -1165,12 +1069,15 @@ object GymOwnerRepository {
             )
         }
 
-        // 3. Booking QR Pass
-        if (trimmed.startsWith("BYCE-BOOKING-", ignoreCase = true) || trimmed.contains("Booking", ignoreCase = true)) {
-            val matchedBooking = sampleBookings.firstOrNull { 
-                trimmed.contains(it.customerName, ignoreCase = true) || trimmed.contains(it.id, ignoreCase = true)
-            } ?: sampleBookings.first()
-
+        // 2. Booking QR Pass
+        val matchedBooking = if (trimmed.startsWith("BYCE-BOOKING-", ignoreCase = true)) {
+            sampleBookings.firstOrNull {
+                trimmed.contains(it.customerName, ignoreCase = true) || hasToken(it.id)
+            }
+        } else {
+            null
+        }
+        if (matchedBooking != null) {
             return ScannedQrResult(
                 rawPayload = trimmed,
                 type = ScannedQrType.BOOKING_PASS,
@@ -1188,16 +1095,17 @@ object GymOwnerRepository {
             )
         }
 
-        // 4. Member Check-in QR Pass / Digital ID
+        // 3. Member Check-in QR Pass / Digital ID
         val matchedCustomer = sampleCustomers.firstOrNull { customer ->
+            val phoneDigits = customer.phone.filter { it.isDigit() }
             trimmed.contains(customer.name, ignoreCase = true) ||
-            trimmed.contains(customer.id, ignoreCase = true) ||
-            trimmed.contains(customer.email, ignoreCase = true) ||
-            trimmed.contains(customer.phone.replace(" ", ""))
+            hasToken(customer.id) ||
+            hasToken(customer.email) ||
+            (phoneDigits.length >= 10 && digitsOnly.contains(phoneDigits.takeLast(10)))
         }
 
-        if (matchedCustomer != null || trimmed.startsWith("BYCE-MEMBER-", ignoreCase = true) || trimmed.startsWith("BYCE-CHECKIN-", ignoreCase = true) || trimmed.contains("MEM-", ignoreCase = true)) {
-            val cust = matchedCustomer ?: sampleCustomers.first()
+        if (matchedCustomer != null) {
+            val cust = matchedCustomer
             val activeShift = when {
                 trimmed.contains("Evening", ignoreCase = true) -> "Evening Shift"
                 trimmed.contains("Night", ignoreCase = true) -> "Night Shift"
@@ -1221,24 +1129,27 @@ object GymOwnerRepository {
             )
         }
 
-        // 5. Universal Barcode / URL / Plain Text Code
+        // 4. Unrecognized code: barcode, URL, UPI, or a pass that matches no member or booking
         val isUrl = trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)
         return ScannedQrResult(
             rawPayload = trimmed,
             type = ScannedQrType.UNIVERSAL_CODE,
-            title = if (isUrl) "Web Link / URL Code" else "Universal Barcode / Code",
+            title = if (isUrl) "Web Link / URL Code" else "Unrecognized Code",
             subtitle = if (trimmed.length > 50) trimmed.take(47) + "..." else trimmed,
-            badgeText = "🌐 $formatName Scanned",
+            badgeText = "⚠️ No matching member or booking",
             formatName = formatName,
             isRecognizedGymEntity = false
         )
     }
 
-    fun confirmQrCheckIn(result: ScannedQrResult): AttendanceItem {
-        val name = result.customerName ?: "Member"
-        val custId = result.customerId ?: "c_${System.currentTimeMillis() % 1000}"
+    // Returns null when the scan does not identify a known member or booking
+    fun confirmQrCheckIn(result: ScannedQrResult): AttendanceItem? {
+        val isCheckInPass = result.type == ScannedQrType.MEMBER_CHECKIN || result.type == ScannedQrType.BOOKING_PASS
+        if (!result.isRecognizedGymEntity || !isCheckInPass) return null
+        val name = result.customerName ?: return null
+        val custId = result.customerId ?: return null
         val plan = result.membershipPlan ?: "Standard Pass"
-        
+
         val record = recordCheckIn(custId, name, plan)
         
         // Add alert notification

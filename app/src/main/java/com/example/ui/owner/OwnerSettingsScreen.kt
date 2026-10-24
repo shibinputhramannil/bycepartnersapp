@@ -422,21 +422,24 @@ private fun ChangePasswordDialog(
 
             Spacer(modifier = Modifier.height(18.dp))
 
+            // Disabled until an authentication service is connected
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color(0xFF6B9330), Color(0xFF4E7320))
-                        )
-                    )
-                    .clickable { onDismiss() }
+                    .background(Color(0x12FFFFFF))
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "Update Password", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                Text(text = "Update Password", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextMuted)
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Password change: Not available yet",
+                fontSize = 11.sp,
+                color = TextMuted
+            )
         }
     }
 }

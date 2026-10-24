@@ -391,7 +391,6 @@ data class AdminActivityLogItem(
 enum class ScannedQrType {
     MEMBER_CHECKIN,
     BOOKING_PASS,
-    PAYMENT_UPI,
     GYM_FACILITY,
     UNIVERSAL_CODE
 }
@@ -408,7 +407,6 @@ data class ScannedQrResult(
     val status: String? = null,
     val shift: String? = null,
     val time: String? = null,
-    val amount: Double? = null,
     val formatName: String = "QR Code",
     val isRecognizedGymEntity: Boolean = true,
     val timestamp: String = "Just now"
@@ -445,24 +443,7 @@ data class GroupWorkoutSession(
     val bookedCount: Int = 18,
     val intensity: String = "High",
     val status: String = "Scheduled", // Scheduled, In Progress, Substitute Assigned, Completed
-    val proxyBroadcastActive: Boolean = false,
     val assignedProxyCoach: String? = null
-)
-
-/**
- * 4. Automated Proxy Trainer Search Broadcast
- */
-data class ProxyTrainerBroadcast(
-    val id: String,
-    val sessionId: String,
-    val sessionTitle: String,
-    val originalCoach: String,
-    val timeSlot: String,
-    val broadcastTime: String = "Just now",
-    val radiusKm: Int = 15,
-    val notifiedTrainersCount: Int = 14,
-    val acceptedTrainers: List<String> = listOf("Coach Vicky (Certified HRX)", "Coach Anjali (Zumba Specialist)"),
-    val status: String = "Broadcast Active" // Broadcast Active, Substitute Confirmed, Closed
 )
 
 /**
@@ -480,23 +461,6 @@ data class TrialCheckInBuzzerAlert(
     val isAudioAlertPlaying: Boolean = true,
     val assignedGreeter: String? = null,
     val isAcknowledged: Boolean = false
-)
-
-/**
- * 6. IoT Hardware & Machinery Telemetry
- */
-data class SmartEquipmentTelemetry(
-    val id: String,
-    val machineName: String, // Technogym Run Pro #04, LifeFitness Cable Tower #02, Matrix Rower #01, Precor Elliptical #03
-    val machineCategory: String, // Treadmill, Cable Machine, Rower, Elliptical, Smart Bike
-    val serialNumber: String,
-    val operationalStatus: String = "Optimal", // Optimal, Service Due, Heavy Load, Warning
-    val totalKmRun: Double,
-    val dailyMotorHours: Double,
-    val currentRpm: Int,
-    val wearPercentage: Int, // 0 - 100%
-    val nextServiceDue: String,
-    val lastTelemetrySync: String = "Real-time live sync"
 )
 
 /**

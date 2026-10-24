@@ -418,7 +418,6 @@ private fun MembershipDetailModal(
     onDismiss: () -> Unit,
     onDeferClick: () -> Unit
 ) {
-    var reminderSent by remember { mutableStateOf(false) }
 
     OwnerModalDialog(onDismissRequest = onDismiss) {
         Column(
@@ -469,20 +468,6 @@ private fun MembershipDetailModal(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (reminderSent) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(StatusActiveGreenBg)
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "✓ Renewal reminder notification queued.", fontSize = 11.sp, color = StatusActiveGreen)
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-            }
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -504,21 +489,25 @@ private fun MembershipDetailModal(
                     }
                 }
 
+                // Disabled until member messaging is connected
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0x20FFFFFF))
-                        .clickable {
-                            reminderSent = true
-                            GymOwnerRepository.logAdminAction("Kishore Kumar", "Sent renewal reminder to ${item.customerName}", "Memberships")
-                        }
+                        .background(Color(0x10FFFFFF))
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "Send Reminder", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextWhite)
+                    Text(text = "Send Reminder", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextMuted)
                 }
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Renewal reminders: Not available yet",
+                fontSize = 11.sp,
+                color = TextMuted
+            )
         }
     }
 }

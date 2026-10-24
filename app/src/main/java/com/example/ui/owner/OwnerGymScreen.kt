@@ -91,12 +91,12 @@ fun OwnerGymScreen(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Subtabs: Profile | Location & Map | IoT Telemetry | Check-in QR
+        // Subtabs: Profile | Location & Map | Check-in QR
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            listOf("Profile", "Location & Map", "IoT Telemetry", "Check-in QR").forEach { tab ->
+            listOf("Profile", "Location & Map", "Check-in QR").forEach { tab ->
                 val isSelected = activeSubTab == tab
                 Box(
                     modifier = Modifier
@@ -600,161 +600,6 @@ fun OwnerGymScreen(
                     )
                 }
             }
-        } else if (activeSubTab == "IoT Telemetry") {
-            // ----------------------------------------------------
-            // 6. IOT HARDWARE & SMART MACHINERY TELEMETRY SYNC
-            // ----------------------------------------------------
-            val telemetryList = remember { GymOwnerRepository.getIoTTelemetry() }
-            var isSyncing by remember { mutableStateOf(false) }
-
-            LiquidGlassCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "IOT HARDWARE TELEMETRY",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = TextSubtle,
-                                letterSpacing = 1.sp
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Connected Smart Machinery",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextWhite
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSyncing) StatusActiveGreenBg else Color(0x25FFFFFF))
-                                .clickable { isSyncing = true }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Sync, contentDescription = "Sync", tint = if (isSyncing) StatusActiveGreen else TextWhite, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = if (isSyncing) "Synced ✓" else "Live Sync",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isSyncing) StatusActiveGreen else TextWhite
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Real-time usage frequency, motor hours, belt wear %, and predictive maintenance tracking.",
-                        fontSize = 12.sp,
-                        color = ByceCoolGray
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    telemetryList.forEach { machine ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(Color(0x18FFFFFF))
-                                .padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = machine.machineName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(
-                                                when (machine.operationalStatus) {
-                                                    "Optimal" -> StatusActiveGreenBg
-                                                    "Heavy Load" -> Color(0x30FFA726)
-                                                    else -> StatusExpiredRedBg
-                                                }
-                                            )
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = machine.operationalStatus,
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = when (machine.operationalStatus) {
-                                                "Optimal" -> StatusActiveGreen
-                                                "Heavy Load" -> Color(0xFFFFA726)
-                                                else -> StatusExpiredRed
-                                            }
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(3.dp))
-                                Text(
-                                    text = "S/N: ${machine.serialNumber} · ${machine.dailyMotorHours}h today · ${machine.totalKmRun.toInt()} KM lifetime",
-                                    fontSize = 11.sp,
-                                    color = ByceCoolGray
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-
-                                // Wear level bar
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "Wear: ${machine.wearPercentage}%", fontSize = 10.sp, color = TextMuted)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(5.dp)
-                                            .clip(RoundedCornerShape(3.dp))
-                                            .background(Color(0x20FFFFFF))
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth(machine.wearPercentage / 100f)
-                                                .fillMaxHeight()
-                                                .clip(RoundedCornerShape(3.dp))
-                                                .background(
-                                                    if (machine.wearPercentage > 75) StatusExpiredRed
-                                                    else if (machine.wearPercentage > 40) Color(0xFFFFA726)
-                                                    else StatusActiveGreen
-                                                )
-                                        )
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(text = "Service Due", fontSize = 10.sp, color = TextMuted)
-                                Text(
-                                    text = machine.nextServiceDue,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (machine.nextServiceDue.contains("Immediate")) StatusExpiredRed else TextWhite
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                    }
-                }
-            }
         } else {
             // ----------------------------------------------------
             // FEATURE 3: GYM QR CHECK-IN MANAGEMENT
@@ -867,7 +712,7 @@ fun OwnerGymScreen(
                         Spacer(modifier = Modifier.height(14.dp))
                     }
 
-                    // QR Action Buttons
+                    // QR Action Buttons (disabled until printing/download is implemented)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -876,18 +721,14 @@ fun OwnerGymScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Color(0x28FFFFFF))
-                                .clickable {
-                                    qrActionNotice = "✓ Printable QR PDF generated for front desk standee."
-                                    GymOwnerRepository.logAdminAction("Kishore Kumar", "Generated printable QR display", "Gym QR")
-                                }
+                                .background(Color(0x12FFFFFF))
                                 .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Print, contentDescription = null, tint = TextWhite, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Print, contentDescription = null, tint = TextMuted, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = "Print Standee", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                                Text(text = "Print Standee", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
                             }
                         }
 
@@ -895,21 +736,25 @@ fun OwnerGymScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Color(0x28FFFFFF))
-                                .clickable {
-                                    qrActionNotice = "✓ High-res QR graphic downloaded to device storage."
-                                    GymOwnerRepository.logAdminAction("Kishore Kumar", "Downloaded QR UI graphic", "Gym QR")
-                                }
+                                .background(Color(0x12FFFFFF))
                                 .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Download, contentDescription = null, tint = TextWhite, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Download, contentDescription = null, tint = TextMuted, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = "Download UI", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                                Text(text = "Download QR", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Print and download: Not available yet",
+                        fontSize = 11.sp,
+                        color = TextMuted,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
                     Spacer(modifier = Modifier.height(10.dp))
 

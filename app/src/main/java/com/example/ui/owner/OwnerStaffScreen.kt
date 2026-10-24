@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.data.models.GroupWorkoutSession
-import com.example.data.models.ProxyTrainerBroadcast
 import com.example.data.models.StaffMember
 import com.example.data.services.GymOwnerRepository
 import com.example.ui.components.*
@@ -35,16 +34,15 @@ import com.example.ui.theme.*
 fun OwnerStaffScreen(
     modifier: Modifier = Modifier
 ) {
-    var selectedTab by remember { mutableStateOf("Roster") } // "Roster", "Sessions", "Proxy Broadcasts"
+    var selectedTab by remember { mutableStateOf("Roster") } // "Roster", "Sessions"
     val staffList = remember { mutableStateListOf<StaffMember>().apply { addAll(GymOwnerRepository.getStaff()) } }
     var refreshKey by remember { mutableIntStateOf(0) }
-    
+
     val workoutSessions = remember(refreshKey) { GymOwnerRepository.getWorkoutSessions() }
-    val proxyBroadcasts = remember(refreshKey) { GymOwnerRepository.getProxyBroadcasts() }
-    
+
     var showAddStaffDialog by remember { mutableStateOf(false) }
     var sessionForAssignProxy by remember { mutableStateOf<GroupWorkoutSession?>(null) }
-    var broadcastSuccessMessage by remember { mutableStateOf<String?>(null) }
+    var assignSuccessMessage by remember { mutableStateOf<String?>(null) }
 
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
@@ -98,7 +96,7 @@ fun OwnerStaffScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 3 Subtabs
+                // 2 Subtabs
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -109,8 +107,7 @@ fun OwnerStaffScreen(
                 ) {
                     listOf(
                         Triple("Roster", "Staff Roster", Icons.Default.Badge),
-                        Triple("Sessions", "Sessions & Coaches", Icons.Default.FitnessCenter),
-                        Triple("Proxy Broadcasts", "Proxy Search (${proxyBroadcasts.size})", Icons.Default.Emergency)
+                        Triple("Sessions", "Sessions & Coaches", Icons.Default.FitnessCenter)
                     ).forEach { (tabKey, title, icon) ->
                         val isSelected = selectedTab == tabKey
                         Box(
@@ -141,7 +138,7 @@ fun OwnerStaffScreen(
                     }
                 }
 
-                broadcastSuccessMessage?.let { msg ->
+                assignSuccessMessage?.let { msg ->
                     Spacer(modifier = Modifier.height(10.dp))
                     Box(
                         modifier = Modifier
@@ -192,47 +189,10 @@ fun OwnerStaffScreen(
                 items(workoutSessions, key = { it.id }) { session ->
                     GroupWorkoutSessionCard(
                         session = session,
-                        onBroadcastProxy = {
-                            GymOwnerRepository.broadcastProxyTrainerSearch(session.id)
-                            broadcastSuccessMessage = "Emergency proxy broadcast sent for '${session.title}' to 14 local certified coaches."
-                            refreshKey++
-                        },
                         onAssignSubstitute = {
                             sessionForAssignProxy = session
                         }
                     )
-                }
-            }
-
-            // Tab 3: Proxy Broadcasts
-            if (selectedTab == "Proxy Broadcasts") {
-                item {
-                    Text(
-                        text = "Automated Proxy Trainer Emergency Dispatch",
-                        fontSize = 12.sp,
-                        color = ByceCoolGray
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-
-                if (proxyBroadcasts.isEmpty()) {
-                    item {
-                        OwnerEmptyState(
-                            title = "No Active Proxy Broadcasts",
-                            description = "All group sessions have primary trainers confirmed. Broadcasts will appear here when a substitute is requested."
-                        )
-                    }
-                } else {
-                    items(proxyBroadcasts, key = { it.id }) { broadcast ->
-                        ProxyBroadcastCard(
-                            broadcast = broadcast,
-                            onQuickAssign = { coach ->
-                                GymOwnerRepository.assignProxyTrainer(broadcast.sessionId, coach)
-                                broadcastSuccessMessage = "Assigned '$coach' to ${broadcast.sessionTitle}!"
-                                refreshKey++
-                            }
-                        )
-                    }
                 }
             }
 
@@ -260,7 +220,7 @@ fun OwnerStaffScreen(
                 onDismiss = { sessionForAssignProxy = null },
                 onAssign = { coachName ->
                     GymOwnerRepository.assignProxyTrainer(session.id, coachName)
-                    broadcastSuccessMessage = "Successfully assigned '$coachName' to ${session.title}."
+                    assignSuccessMessage = "Successfully assigned '$coachName' to ${session.title}."
                     refreshKey++
                     sessionForAssignProxy = null
                 }
@@ -272,7 +232,6 @@ fun OwnerStaffScreen(
 @Composable
 private fun GroupWorkoutSessionCard(
     session: GroupWorkoutSession,
-    onBroadcastProxy: () -> Unit,
     onAssignSubstitute: () -> Unit
 ) {
     val occupancyPercent = if (session.capacity > 0) (session.bookedCount.toFloat() / session.capacity.toFloat()) else 0f
@@ -324,14 +283,14 @@ private fun GroupWorkoutSessionCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (session.proxyBroadcastActive) StatusPendingAmberBg else StatusActiveGreenBg)
+                        .background(StatusActiveGreenBg)
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = if (session.proxyBroadcastActive) "Proxy Active" else session.status,
+                        text = session.status,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (session.proxyBroadcastActive) StatusPendingAmber else StatusActiveGreen
+                        color = StatusActiveGreen
                     )
                 }
             }
@@ -384,33 +343,6 @@ private fun GroupWorkoutSessionCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Emergency Proxy Broadcast Button
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (session.proxyBroadcastActive) Color(0x18FFFFFF) else Color(0x30EF4444))
-                        .clickable(enabled = !session.proxyBroadcastActive) { onBroadcastProxy() }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Emergency,
-                            contentDescription = null,
-                            tint = if (session.proxyBroadcastActive) TextMuted else Color(0xFFEF4444),
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = if (session.proxyBroadcastActive) "Broadcast Live" else "Broadcast Proxy",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (session.proxyBroadcastActive) TextMuted else Color(0xFFEF4444)
-                        )
-                    }
-                }
-
                 // Assign Substitute Button
                 Box(
                     modifier = Modifier
@@ -425,88 +357,6 @@ private fun GroupWorkoutSessionCard(
                         Icon(Icons.Default.PersonSearch, contentDescription = null, tint = TextWhite, modifier = Modifier.size(15.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(text = "Assign Coach", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextWhite)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProxyBroadcastCard(
-    broadcast: ProxyTrainerBroadcast,
-    onQuickAssign: (coach: String) -> Unit
-) {
-    LiquidGlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(Color(0x35EF4444)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Sensors, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(text = broadcast.sessionTitle, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextWhite)
-                        Text(text = "Shift: ${broadcast.timeSlot}", fontSize = 11.sp, color = ByceCoolGray)
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(StatusPendingAmberBg)
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
-                ) {
-                    Text(text = "${broadcast.notifiedTrainersCount} Coaches Alerted", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusPendingAmber)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = "Primary coach ${broadcast.originalCoach} requested substitution. 14 local certified coaches within 10km radius have been notified on their partner app.",
-                fontSize = 11.sp,
-                color = TextMuted,
-                lineHeight = 15.sp
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(text = "Instant Accept Responses:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextWhite)
-            Spacer(modifier = Modifier.height(6.dp))
-
-            listOf("Coach Rahul (Freelance · 4.9★ · 1.2km)", "Coach Divya (Yoga Cert · 4.8★ · 3.5km)").forEach { responder ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 3.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = responder, fontSize = 11.sp, color = ByceCoolGray)
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0x3038BDF8))
-                            .clickable { onQuickAssign(responder.split(" ")[1]) }
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Text(text = "Confirm Shift", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusInfoBlue)
                     }
                 }
             }

@@ -1440,8 +1440,6 @@ fun ExportModalDialog(
     onFormatChange: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var isExportTriggered by remember { mutableStateOf(false) }
-
     OwnerModalDialog(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -1492,39 +1490,24 @@ fun ExportModalDialog(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            if (isExportTriggered) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(StatusActiveGreenBg)
-                        .padding(12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "✓ $selectedFormat export scheduled. Backend download initiated.",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = StatusActiveGreen
-                    )
-                }
-                Spacer(modifier = Modifier.height(14.dp))
-            }
-
+            // Disabled until file export is implemented
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0x35FFFFFF))
-                    .clickable {
-                        isExportTriggered = true
-                        GymOwnerRepository.logAdminAction("Kishore Kumar", "Exported $moduleName ($selectedFormat)", "Export")
-                    }
+                    .background(Color(0x12FFFFFF))
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "Download $selectedFormat", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                Text(text = "Download $selectedFormat", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextMuted)
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Export: Not available yet",
+                fontSize = 11.sp,
+                color = TextMuted
+            )
         }
     }
 }

@@ -176,14 +176,14 @@ fun OwnerBookingsScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
-                                        text = "30-MIN SHIFT REMINDER ENGINE",
+                                        text = "SHIFT REMINDERS",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.ExtraBold,
                                         color = TextSubtle,
                                         letterSpacing = 0.8.sp
                                     )
                                     Text(
-                                        text = "Gmail Pre-Session Alerts",
+                                        text = "Pre-Session Reminders",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = TextWhite
@@ -194,20 +194,16 @@ fun OwnerBookingsScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(20.dp))
-                                    .background(StatusActiveGreenBg)
+                                    .background(Color(0x15FFFFFF))
                                     .padding(horizontal = 8.dp, vertical = 3.dp)
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(StatusActiveGreen))
-                                    Spacer(modifier = Modifier.width(5.dp))
-                                    Text(text = "Gmail Active", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusActiveGreen)
-                                }
+                                Text(text = "Manual only", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextMuted)
                             }
                         }
 
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "Members receive an automated reminder message through Gmail exactly 30 minutes before gym start time for their Morning, Evening, or Night shift.",
+                            text = "Automatic reminders: Not available yet. Use \"Open Gmail draft\" on a booking to email the member yourself. Suggested time is 30 minutes before the shift starts.",
                             fontSize = 11.sp,
                             color = ByceCoolGray,
                             lineHeight = 15.sp
@@ -334,15 +330,7 @@ fun OwnerBookingsScreen(
                         booking = booking,
                         onViewClick = { selectedBookingForDetail = booking },
                         onSendReminder = {
-                            val index = bookings.indexOfFirst { it.id == booking.id }
-                            if (index != -1) {
-                                bookings[index] = booking.copy(
-                                    reminderStatus = "Sent via Gmail (30m prior)"
-                                )
-                                GymOwnerRepository.sendBookingGmailReminder(booking.id)
-                                launchGmailReminder(context, booking)
-                                statusMessage = "✓ 30-min reminder dispatched to ${booking.customerEmail} via Gmail!"
-                            }
+                            statusMessage = gmailDraftMessage(launchGmailReminder(context, booking), booking)
                         },
                         onCancelClick = {
                             val index = bookings.indexOfFirst { it.id == booking.id }
@@ -373,15 +361,7 @@ fun OwnerBookingsScreen(
                 booking = booking,
                 onDismiss = { selectedBookingForDetail = null },
                 onSendReminder = {
-                    val index = bookings.indexOfFirst { it.id == booking.id }
-                    if (index != -1) {
-                        val updated = booking.copy(reminderStatus = "Sent via Gmail (30m prior)")
-                        bookings[index] = updated
-                        selectedBookingForDetail = updated
-                        GymOwnerRepository.sendBookingGmailReminder(booking.id)
-                        launchGmailReminder(context, booking)
-                        statusMessage = "✓ 30-min reminder sent to ${booking.customerEmail} through Gmail!"
-                    }
+                    statusMessage = gmailDraftMessage(launchGmailReminder(context, booking), booking)
                 },
                 onUpdateShift = { newShift ->
                     val index = bookings.indexOfFirst { it.id == booking.id }
@@ -461,22 +441,28 @@ private fun ShiftScheduleMiniCard(
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = "Start: $gymStart", fontSize = 10.sp, color = ByceCoolGray)
-            Text(text = "Gmail: $reminderAlert", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = accentColor)
+            Text(text = "Suggested: $reminderAlert", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = accentColor)
         }
     }
 }
 
+private fun gmailDraftMessage(opened: Boolean, booking: BookingItem): String =
+    if (opened) {
+        "Gmail draft opened for ${booking.customerName}. Send it from Gmail; it isn't marked as sent here."
+    } else {
+        "Couldn't open an email app on this device."
+    }
+
+// Opens a pre-filled email draft. Returns false when no email app can handle it.
 private fun launchGmailReminder(
     context: Context,
     booking: BookingItem
-) {
-    val subject = "Reminder: Your ${booking.shift} at Iron House Fitness starts in 30 mins!"
+): Boolean {
+    val subject = "Reminder: Your ${booking.shift} at Iron House Fitness"
     val body = """
         Hi ${booking.customerName},
 
-        This is your automated reminder from Iron House Fitness.
-
-        Your upcoming workout session is scheduled to start in 30 minutes!
+        This is a reminder from Iron House Fitness about your upcoming workout session.
 
         =======================================
         RESERVATION DETAILS:
@@ -503,13 +489,17 @@ private fun launchGmailReminder(
         setPackage("com.google.android.gm")
     }
 
-    try {
+    return try {
         context.startActivity(gmailIntent)
+        true
     } catch (e: Exception) {
         val fallbackIntent = Intent(Intent.ACTION_SENDTO, emailUri)
         try {
             context.startActivity(fallbackIntent)
-        } catch (_: Exception) { }
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 }
 
@@ -594,7 +584,7 @@ private fun BookingRowCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (booking.reminderStatus.contains("Sent", ignoreCase = true)) "Gmail Sent (30m)" else "Gmail 30m Prior",
+                            text = if (booking.reminderStatus.contains("Sent", ignoreCase = true)) "Reminder sent" else "No reminder sent",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (booking.reminderStatus.contains("Sent", ignoreCase = true)) StatusActiveGreen else Color(0xFFEA4335)
@@ -620,10 +610,10 @@ private fun BookingRowCard(
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Send, contentDescription = "Gmail Reminder", tint = Color(0xFFEA4335), modifier = Modifier.size(12.dp))
+                        Icon(Icons.Default.Send, contentDescription = "Open Gmail draft", tint = Color(0xFFEA4335), modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Gmail Reminder",
+                            text = "Open Gmail draft",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFEA4335)
@@ -843,7 +833,7 @@ private fun BookingDetailModal(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = Color(0xFFEA4335), modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = "30-Min Pre-Gym Reminder", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                            Text(text = "Pre-Session Reminder", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
                         }
 
                         Box(
@@ -858,7 +848,7 @@ private fun BookingDetailModal(
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Automated reminder dispatched 30 minutes before gym start time ($shiftStart) for the ${booking.shift}.",
+                        text = "Automatic reminders: Not available yet. Open a Gmail draft to remind the member yourself, ideally 30 minutes before the shift starts ($shiftStart).",
                         fontSize = 11.sp,
                         color = ByceCoolGray,
                         lineHeight = 15.sp
@@ -869,7 +859,7 @@ private fun BookingDetailModal(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     BookingDetailRow("Recipient", booking.customerEmail)
-                    BookingDetailRow("Lead Time", "30 Minutes Before Gym Start")
+                    BookingDetailRow("Suggested Timing", "30 Minutes Before Gym Start")
                     BookingDetailRow("Reminder Status", booking.reminderStatus)
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -891,7 +881,7 @@ private fun BookingDetailModal(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Send, contentDescription = "Send", tint = TextWhite, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = "✉️ Send 30-Min Reminder Through Gmail", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                            Text(text = "✉️ Open Gmail draft", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextWhite)
                         }
                     }
                 }
