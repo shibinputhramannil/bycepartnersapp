@@ -19,11 +19,11 @@ BYCE is an aggregator: BYCE owns pass tiers, pricing, member payments, pass paus
 | Accepted Passes | Read-only list of the BYCE passes that give entry at this gym. Tiers and pricing are managed by BYCE. |
 | Bookings | Slot bookings, mark arrived (same check-in rules), cancel, open a Gmail draft to remind a member |
 | Payments | Read-only view of member payments and pending dues, labelled as demo data. Members pay BYCE; there is no POS, payment collection, or "record paid" in this app. |
-| Gym | Gym profile, opening hours and open/closed status, read-only BYCE listing status, location details, check-in QR |
+| Gym | Gym profile (contact details, address and coordinates), opening hours and open/closed status, read-only BYCE listing status, check-in QR |
 | Staff | Staff roster, class sessions, assign a substitute coach |
 | Other | Activity log, notifications, settings |
 
-**Not available yet** (shown in the app as "Not available yet"): file exports, QR print/download, SMS/WhatsApp and renewal reminders, password change, and a map view.
+**Not available yet** (shown in the app as "Not available yet"): file exports, QR print/download, SMS/WhatsApp and renewal reminders, and password change.
 
 Member-facing screens and the Flutter map demo are not part of this app. Earlier versions are preserved on the `member-app` and `flutter-map-demo` branches.
 

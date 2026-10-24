@@ -32,7 +32,6 @@ import com.example.ui.theme.*
 
 enum class GymTab(val label: String) {
     PROFILE("Profile"),
-    LOCATION("Location & Map"),
     CHECK_IN_QR("Check-in QR")
 }
 
@@ -66,7 +65,7 @@ fun OwnerGymScreen(
         ) {
             Column {
                 Text(
-                    text = "FACILITY & GEO-LOCATION",
+                    text = "FACILITY",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = TextSubtle,
@@ -97,7 +96,7 @@ fun OwnerGymScreen(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Subtabs: Profile | Location & Map | Check-in QR
+        // Subtabs: Profile | Check-in QR
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -374,92 +373,8 @@ fun OwnerGymScreen(
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(text = "${gymProfile.address}\n${gymProfile.city}, ${gymProfile.district}\n${gymProfile.state} - ${gymProfile.pincode}", fontSize = 13.sp, color = TextWhite, lineHeight = 19.sp)
-                }
-            }
-        } else if (activeSubTab == GymTab.LOCATION) {
-            // Gym location details from the profile (no live map yet)
-            LiquidGlassCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF161415))
-                                .padding(4.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.byce_kettlebell_pin),
-                                contentDescription = "BYCE Center Pin",
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "GYM LOCATION",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextSubtle,
-                                letterSpacing = 0.5.sp
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Coordinates & Address",
-                                fontSize = 17.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextWhite
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Map view: Not available yet", fontSize = 11.sp, color = TextMuted)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Coordinates Display
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(text = "Latitude", fontSize = 11.sp, color = ByceCoolGray)
-                            Text(text = "${gymProfile.latitude}° N", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextWhite)
-                        }
-                        Column {
-                            Text(text = "Longitude", fontSize = 11.sp, color = ByceCoolGray)
-                            Text(text = "${gymProfile.longitude}° E", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextWhite)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x18FFFFFF)))
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Text(
-                        text = "Full Address",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextSubtle
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "${gymProfile.address}, ${gymProfile.city}, ${gymProfile.district}, ${gymProfile.state} - ${gymProfile.pincode}",
-                        fontSize = 13.sp,
-                        color = TextMuted,
-                        lineHeight = 18.sp
-                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(text = "Coordinates: ${gymProfile.latitude}° N, ${gymProfile.longitude}° E", fontSize = 12.sp, color = ByceCoolGray)
                 }
             }
         } else {

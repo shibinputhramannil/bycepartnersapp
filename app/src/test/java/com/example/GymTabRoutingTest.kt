@@ -9,12 +9,12 @@ import org.junit.Test
 class GymTabRoutingTest {
 
   @Test
-  fun gym_screen_tabs_have_stable_labels() {
-    assertEquals(listOf("Profile", "Location & Map", "Check-in QR"), GymTab.entries.map { it.label })
+  fun gym_screen_has_profile_and_check_in_qr_tabs_only() {
+    assertEquals(listOf("Profile", "Check-in QR"), GymTab.entries.map { it.label })
   }
 
   @Test
-  fun location_is_a_tab_of_gym_profile_not_a_separate_route() {
+  fun there_is_no_separate_location_route() {
     assertFalse(OwnerScreenRoute.entries.any { it.title == "Gym Location" })
   }
 }

@@ -6,7 +6,6 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.example.ui.components.OwnerNavigationDrawerSheet
-import com.example.ui.owner.GymTab
 import com.example.ui.owner.OwnerAttendanceScreen
 import com.example.ui.owner.OwnerGymScreen
 import com.example.ui.owner.OwnerSettingsScreen
@@ -74,11 +73,16 @@ class PartnerCleanupUiTest {
   }
 
   @Test
-  fun gym_location_shows_no_simulated_map_controls() {
-    composeTestRule.setContent { MyApplicationTheme { OwnerGymScreen(initialTab = GymTab.LOCATION) } }
-    composeTestRule.onNodeWithText("Map view: Not available yet").assertExists()
+  fun gym_profile_shows_address_and_coordinates_without_a_map_tab() {
+    composeTestRule.setContent { MyApplicationTheme { OwnerGymScreen() } }
+    composeTestRule.onNodeWithText("ADDRESS & PINCODE").assertExists()
+    composeTestRule.onNodeWithText("Coordinates: 11.2588° N, 75.7804° E").assertExists()
+
+    composeTestRule.onAllNodesWithText("Location & Map").assertCountEquals(0)
+    composeTestRule.onAllNodesWithText("Map view", substring = true).assertCountEquals(0)
     composeTestRule.onAllNodesWithText("GPS Accuracy", substring = true).assertCountEquals(0)
     composeTestRule.onAllNodesWithText("Satellite").assertCountEquals(0)
+    composeTestRule.onAllNodesWithText("Discovery Status").assertCountEquals(0)
   }
 
   @Test

@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import com.example.ui.components.OwnerNavigationDrawerSheet
-import com.example.ui.owner.GymTab
 import com.example.ui.owner.OwnerDashboardScreen
 import com.example.ui.owner.OwnerGymScreen
 import com.example.ui.owner.OwnerMembershipsScreen
@@ -106,13 +105,6 @@ class AggregatorScopeUiTest {
     composeTestRule.onNodeWithText("Managed by BYCE. Contact BYCE support to change your listing.").assertExists()
     composeTestRule.onAllNodesWithText("Platform Visibility").assertCountEquals(0)
     composeTestRule.onAllNodesWithText("Super Admin", substring = true).assertCountEquals(0)
-  }
-
-  @Test
-  fun location_tab_has_no_duplicate_discovery_status() {
-    composeTestRule.setContent { MyApplicationTheme { OwnerGymScreen(initialTab = GymTab.LOCATION) } }
-    composeTestRule.onNodeWithText("Coordinates & Address").assertExists()
-    composeTestRule.onAllNodesWithText("Discovery Status").assertCountEquals(0)
   }
 
   @Test
