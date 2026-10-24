@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
@@ -619,8 +618,7 @@ fun OwnerNavigationDrawerSheet(
     currentScreenName: String,
     onNavigate: (String) -> Unit,
     onClose: () -> Unit,
-    onLogout: () -> Unit,
-    onSwitchToMemberApp: () -> Unit = {}
+    onLogout: () -> Unit
 ) {
     val navItems = listOf(
         OwnerNavItem("Dashboard", Icons.Default.Dashboard),
@@ -753,49 +751,6 @@ fun OwnerNavigationDrawerSheet(
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-
-            // Switch to Member App (5 Tiers & Trials)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0x25FFFFFF))
-                    .clickable {
-                        onClose()
-                        onSwitchToMemberApp()
-                    }
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.DirectionsRun,
-                    contentDescription = "Member App Mode",
-                    tint = NeonGreen,
-                    modifier = Modifier.size(19.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Member App Mode",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextWhite
-                    )
-                    Text(
-                        text = "5 Tiers & Free Trials",
-                        fontSize = 10.sp,
-                        color = ByceCoolGray
-                    )
-                }
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    tint = NeonGreen,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
 
             // Logout Option
             Row(

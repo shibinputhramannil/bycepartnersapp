@@ -19,7 +19,7 @@ Android app for BYCE partner gyms: owners, managers and front-desk staff use it 
 | Staff | Staff roster, class sessions |
 | Other | Reports, activity log, notifications, settings |
 
-The app also still contains member-facing screens (`ui/home/`), reachable from the owner drawer via "Member App Mode". They are scheduled to move out of this app.
+Member-facing screens are not part of this app. The earlier prototype versions are preserved on the `member-app` branch.
 
 ## Project structure
 
@@ -33,7 +33,6 @@ app/src/main/java/com/example/
     ├── owner/               # Partner/owner portal screens
     ├── auth/                # Login / sign-up UI (not connected to a backend)
     ├── onboarding/          # Onboarding pager (currently unreachable)
-    ├── home/                # Member-facing screens (to be separated)
     ├── components/          # Shared Compose components
     └── theme/               # Colours, typography, theme
 ```
