@@ -1,8 +1,10 @@
 package com.example
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
-import com.example.ui.onboarding.OnboardingScreen
+import com.example.ui.owner.OwnerDashboardScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -16,15 +18,15 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = RobolectricDeviceQualifiers.Pixel8, sdk = [36])
-class GreetingScreenshotTest {
+class OwnerDashboardScreenshotTest {
 
   @get:Rule val composeTestRule = createComposeRule()
 
   @Test
-  fun onboarding_screenshot() {
-    composeTestRule.setContent { MyApplicationTheme { OnboardingScreen() } }
+  fun owner_dashboard_screenshot() {
+    composeTestRule.setContent { MyApplicationTheme { OwnerDashboardScreen() } }
 
-    composeTestRule.onRoot().captureRoboImage(filePath = "src/test/screenshots/greeting.png")
+    composeTestRule.onNodeWithText("WELCOME BACK").assertIsDisplayed()
+    composeTestRule.onRoot().captureRoboImage(filePath = "src/test/screenshots/owner_dashboard.png")
   }
 }
-
