@@ -304,6 +304,23 @@ object GymOwnerRepository {
             reminderScheduled = false,
             reminderDeliveryChannel = "Gmail",
             reminderStatus = "Cancelled"
+        ),
+        // Walk-in day pass with no member profile
+        BookingItem(
+            id = "b7",
+            customerName = "Nikhil Thomas",
+            customerPhone = "+91 97440 21567",
+            customerEmail = "nikhil.thomas@gmail.com",
+            membershipPlan = "Day Pass",
+            date = "Today",
+            time = "06:30 PM - 08:00 PM",
+            shift = "Evening Shift",
+            status = "Upcoming",
+            arrivalStatus = "Confirmed",
+            reminderMinutesBefore = 30,
+            reminderScheduled = false,
+            reminderDeliveryChannel = "Gmail",
+            reminderStatus = "Not sent"
         )
     )
 
@@ -493,46 +510,41 @@ object GymOwnerRepository {
 
     fun getAttendanceOverrides(): List<AttendanceOverrideRecord> = sampleOverrides
 
+    // The override reason also satisfies the expired/pending/frozen reason rule;
+    // unknown members and duplicate check-ins are still rejected.
     fun performAttendanceOverride(
         customerId: String,
-        customerName: String,
-        plan: String,
         reason: String,
         staffName: String = "Kishore Kumar (Owner)"
-    ): Boolean {
-        recordCheckIn(
-            customerId = customerId,
-            name = customerName,
-            plan = plan
-        )
-        val bookingIdx = sampleBookings.indexOfFirst { it.customerName.equals(customerName, ignoreCase = true) || it.id == customerId }
-        if (bookingIdx != -1) {
-            sampleBookings[bookingIdx] = sampleBookings[bookingIdx].copy(arrivalStatus = "Attended", status = "Completed")
-        }
-        val record = AttendanceOverrideRecord(
-            id = "ovr_${System.currentTimeMillis()}",
-            customerId = customerId,
-            customerName = customerName,
-            membershipPlan = plan,
-            reason = reason,
-            overrideStaff = staffName,
-            originalStatus = "Hardware Bypass",
-            updatedStatus = "Attended",
-            timestamp = "Just now"
-        )
-        sampleOverrides.add(0, record)
-        logAdminAction(staffName, "Forced attendance override for $customerName ($plan). Reason: $reason", "Attendance")
-        addNotification(
-            NotificationItem(
-                id = "notif_ovr_${System.currentTimeMillis()}",
-                title = "Manual Override Check-In",
-                message = "Forced check-in status to 'Attended' for $customerName. Hardware bypass reason: $reason",
-                type = "Booking",
-                timestamp = "Just now",
-                isRead = false
+    ): CheckInOutcome {
+        val outcome = checkIn(customerId = customerId, reason = reason, source = "hardware override", staffName = staffName)
+        if (outcome is CheckInOutcome.Success) {
+            val visit = outcome.record
+            val record = AttendanceOverrideRecord(
+                id = "ovr_${System.currentTimeMillis()}",
+                customerId = visit.customerId,
+                customerName = visit.customerName,
+                membershipPlan = visit.membershipPlan,
+                reason = reason,
+                overrideStaff = staffName,
+                originalStatus = "Hardware Bypass",
+                updatedStatus = "Attended",
+                timestamp = "Just now"
             )
-        )
-        return true
+            sampleOverrides.add(0, record)
+            logAdminAction(staffName, "Forced attendance override for ${visit.customerName} (${visit.membershipPlan}). Reason: $reason", "Attendance")
+            addNotification(
+                NotificationItem(
+                    id = "notif_ovr_${System.currentTimeMillis()}",
+                    title = "Manual Override Check-In",
+                    message = "Forced check-in status to 'Attended' for ${visit.customerName}. Hardware bypass reason: $reason",
+                    type = "Booking",
+                    timestamp = "Just now",
+                    isRead = false
+                )
+            )
+        }
+        return outcome
     }
 
     // ----------------------------------------------------
@@ -544,9 +556,10 @@ object GymOwnerRepository {
             val m = sampleMemberships[index]
             val updatedEndDate = "${m.endDate} (+${freezeDays}d deferred)"
             sampleMemberships[index] = m.copy(
-                status = "On Hold (Frozen)",
+                status = MemberStatus.FROZEN,
                 endDate = updatedEndDate
             )
+            setCustomerStatusFor(m, MemberStatus.FROZEN)
             requestMembershipFreeze(
                 planName = m.planName,
                 startDate = "Today",
@@ -558,6 +571,28 @@ object GymOwnerRepository {
             return true
         }
         return false
+    }
+
+    // Ends a freeze early. The deferred end date is kept.
+    fun resumeMembership(membershipId: String, staffName: String = "Kishore Kumar"): Boolean {
+        val index = sampleMemberships.indexOfFirst { it.id == membershipId }
+        if (index == -1 || sampleMemberships[index].status != MemberStatus.FROZEN) return false
+        val m = sampleMemberships[index]
+        sampleMemberships[index] = m.copy(status = MemberStatus.ACTIVE)
+        setCustomerStatusFor(m, MemberStatus.ACTIVE)
+        logAdminAction(staffName, "Unfroze membership for ${m.customerName}", "Memberships")
+        return true
+    }
+
+    // Keeps the member record's status in sync with their membership
+    private fun setCustomerStatusFor(membership: MembershipItem, status: String) {
+        val index = sampleCustomers.indexOfFirst {
+            it.email.equals(membership.customerEmail, ignoreCase = true) ||
+                it.name.equals(membership.customerName, ignoreCase = true)
+        }
+        if (index != -1) {
+            sampleCustomers[index] = sampleCustomers[index].copy(status = status)
+        }
     }
 
     // ----------------------------------------------------
@@ -697,18 +732,13 @@ object GymOwnerRepository {
         }
     }
 
-    fun markBookingArrived(bookingId: String, adminName: String = "Kishore Kumar") {
-        val index = sampleBookings.indexOfFirst { it.id == bookingId }
-        if (index != -1) {
-            val booking = sampleBookings[index]
-            sampleBookings[index] = booking.copy(arrivalStatus = "Checked In", status = "Completed")
-            recordCheckIn(
-                customerId = booking.id,
-                name = booking.customerName,
-                plan = booking.membershipPlan
-            )
+    fun markBookingArrived(bookingId: String, reason: String? = null, adminName: String = "Kishore Kumar"): CheckInOutcome {
+        val outcome = checkIn(bookingId = bookingId, reason = reason, source = "bookings", staffName = adminName)
+        if (outcome is CheckInOutcome.Success) {
+            val booking = sampleBookings.first { it.id == bookingId }
             logAdminAction(adminName, "Marked ${booking.customerName} as arrived / checked in for slot ${booking.time}", "Bookings")
         }
+        return outcome
     }
 
     // Shift & 30-Minute Gmail Reminder Engine
@@ -814,7 +844,8 @@ object GymOwnerRepository {
         avgDailyVisits = 112
     )
 
-    fun recordCheckIn(customerId: String, name: String, plan: String = "Active Plan"): AttendanceItem {
+    // Writes the attendance record only; every caller must go through checkIn() first
+    private fun recordCheckIn(customerId: String, name: String, plan: String = "Active Plan"): AttendanceItem {
         val newRecord = AttendanceItem(
             id = "att_${System.currentTimeMillis()}",
             customerId = customerId,
@@ -837,6 +868,119 @@ object GymOwnerRepository {
             sampleAttendance[index] = record.copy(checkOutTime = "Just now", status = "Completed")
             logAdminAction("Kishore Kumar", "Recorded check-out for ${record.customerName}", "Attendance")
         }
+    }
+
+    // ----------------------------------------------------
+    // CHECK-IN ELIGIBILITY (shared by scanner, manual check-in, override, bookings)
+    // ----------------------------------------------------
+    fun findCustomer(customerId: String): CustomerItem? = sampleCustomers.firstOrNull { it.id == customerId }
+
+    fun searchCustomers(query: String, limit: Int = 6): List<CustomerItem> {
+        val q = query.trim()
+        if (q.isEmpty()) return emptyList()
+        val qDigits = q.filter { it.isDigit() }
+        return sampleCustomers.filter {
+            it.name.contains(q, ignoreCase = true) ||
+                it.id.equals(q, ignoreCase = true) ||
+                it.email.contains(q, ignoreCase = true) ||
+                (qDigits.length >= 4 && it.phone.filter { c -> c.isDigit() }.contains(qDigits))
+        }.take(limit)
+    }
+
+    private fun isCheckedInToday(customerId: String): Boolean =
+        sampleAttendance.any { it.customerId == customerId && it.date == "Today" && it.checkOutTime == null }
+
+    fun evaluateMemberCheckIn(customerId: String): CheckInCheck {
+        val customer = findCustomer(customerId)
+            ?: return CheckInCheck(CheckInEligibility.BLOCKED, "No matching member found.")
+        if (isCheckedInToday(customer.id)) {
+            return CheckInCheck(CheckInEligibility.BLOCKED, "${customer.name} is already checked in.", customer)
+        }
+        return when (customer.status) {
+            MemberStatus.ACTIVE -> CheckInCheck(CheckInEligibility.ALLOWED, "Active membership.", customer)
+            MemberStatus.EXPIRED -> CheckInCheck(
+                CheckInEligibility.NEEDS_REASON,
+                "Membership expired. Check in only with a reason; it will be logged.",
+                customer
+            )
+            MemberStatus.PENDING -> CheckInCheck(
+                CheckInEligibility.NEEDS_REASON,
+                "Membership payment is pending. Check in only with a reason; it will be logged.",
+                customer
+            )
+            MemberStatus.FROZEN -> CheckInCheck(
+                CheckInEligibility.BLOCKED_OVERRIDABLE,
+                "Membership is paused (frozen). Check-in is blocked unless staff override with a reason.",
+                customer
+            )
+            // Unrecognized statuses are never overridable
+            else -> CheckInCheck(
+                CheckInEligibility.BLOCKED,
+                "Membership status \"${customer.status}\" isn't recognized. Check-in is blocked; update the member's status first.",
+                customer
+            )
+        }
+    }
+
+    fun evaluateBookingCheckIn(bookingId: String): CheckInCheck {
+        val booking = sampleBookings.firstOrNull { it.id == bookingId }
+            ?: return CheckInCheck(CheckInEligibility.BLOCKED, "No matching booking found.")
+        if (booking.status.equals("Cancelled", ignoreCase = true)) {
+            return CheckInCheck(CheckInEligibility.BLOCKED, "This booking was cancelled.", booking = booking)
+        }
+        val alreadyArrived = booking.arrivalStatus in listOf("Checked In", "Attended") ||
+            booking.status.equals("Completed", ignoreCase = true)
+        if (alreadyArrived) {
+            return CheckInCheck(CheckInEligibility.BLOCKED, "Already checked in for this booking.", booking = booking)
+        }
+        val customer = sampleCustomers.firstOrNull { it.name.equals(booking.customerName, ignoreCase = true) }
+        // A booking without a member record (e.g. a day pass) is its own entitlement
+        return if (customer != null) {
+            evaluateMemberCheckIn(customer.id).copy(booking = booking)
+        } else {
+            CheckInCheck(CheckInEligibility.ALLOWED, "Booking pass without a member record.", booking = booking)
+        }
+    }
+
+    fun checkIn(
+        customerId: String? = null,
+        bookingId: String? = null,
+        reason: String? = null,
+        source: String,
+        staffName: String = "Kishore Kumar"
+    ): CheckInOutcome {
+        val check = when {
+            bookingId != null -> evaluateBookingCheckIn(bookingId)
+            customerId != null -> evaluateMemberCheckIn(customerId)
+            else -> return CheckInOutcome.Rejected("No member or booking selected.")
+        }
+        when (check.eligibility) {
+            CheckInEligibility.BLOCKED -> return CheckInOutcome.Rejected(check.message)
+            CheckInEligibility.NEEDS_REASON, CheckInEligibility.BLOCKED_OVERRIDABLE ->
+                if (reason.isNullOrBlank()) return CheckInOutcome.Rejected("A reason is required. ${check.message}")
+            CheckInEligibility.ALLOWED -> Unit
+        }
+
+        val customer = check.customer
+        val booking = check.booking
+        val name = customer?.name ?: booking!!.customerName
+        val record = recordCheckIn(
+            customerId = customer?.id ?: booking!!.id,
+            name = name,
+            plan = customer?.membershipPlan ?: booking!!.membershipPlan
+        )
+        if (booking != null) {
+            val index = sampleBookings.indexOfFirst { it.id == booking.id }
+            sampleBookings[index] = booking.copy(arrivalStatus = "Checked In", status = "Completed")
+        }
+        if (check.eligibility != CheckInEligibility.ALLOWED) {
+            logAdminAction(
+                staffName,
+                "Check-in override for $name (${customer?.status ?: "no member record"}) via $source. Reason: $reason",
+                "Attendance"
+            )
+        }
+        return CheckInOutcome.Success(record)
     }
 
     // ----------------------------------------------------
@@ -1071,20 +1215,21 @@ object GymOwnerRepository {
 
         // 2. Booking QR Pass
         val matchedBooking = if (trimmed.startsWith("BYCE-BOOKING-", ignoreCase = true)) {
-            sampleBookings.firstOrNull {
-                trimmed.contains(it.customerName, ignoreCase = true) || hasToken(it.id)
-            }
+            sampleBookings.firstOrNull { hasToken(it.id) }
+                ?: sampleBookings.firstOrNull { trimmed.contains(it.customerName, ignoreCase = true) }
         } else {
             null
         }
         if (matchedBooking != null) {
+            val bookingCustomer = sampleCustomers.firstOrNull { it.name.equals(matchedBooking.customerName, ignoreCase = true) }
             return ScannedQrResult(
                 rawPayload = trimmed,
                 type = ScannedQrType.BOOKING_PASS,
                 title = matchedBooking.customerName,
                 subtitle = "${matchedBooking.shift} (${matchedBooking.time})",
-                badgeText = "📅 Slot Reservation Verified",
-                customerId = matchedBooking.id,
+                badgeText = if (matchedBooking.status.equals("Cancelled", ignoreCase = true)) "⚠️ Booking Cancelled" else "📅 Slot Reservation Found",
+                customerId = bookingCustomer?.id,
+                bookingId = matchedBooking.id,
                 customerName = matchedBooking.customerName,
                 membershipPlan = matchedBooking.membershipPlan,
                 status = matchedBooking.status,
@@ -1142,28 +1287,43 @@ object GymOwnerRepository {
         )
     }
 
-    // Returns null when the scan does not identify a known member or booking
-    fun confirmQrCheckIn(result: ScannedQrResult): AttendanceItem? {
-        val isCheckInPass = result.type == ScannedQrType.MEMBER_CHECKIN || result.type == ScannedQrType.BOOKING_PASS
-        if (!result.isRecognizedGymEntity || !isCheckInPass) return null
-        val name = result.customerName ?: return null
-        val custId = result.customerId ?: return null
-        val plan = result.membershipPlan ?: "Standard Pass"
+    // Eligibility for a scan result; unrecognized scans are always blocked
+    fun evaluateScanCheckIn(result: ScannedQrResult): CheckInCheck {
+        if (!result.isRecognizedGymEntity) {
+            return CheckInCheck(CheckInEligibility.BLOCKED, "This code doesn't match any member or booking.")
+        }
+        return when {
+            result.type == ScannedQrType.BOOKING_PASS && result.bookingId != null -> evaluateBookingCheckIn(result.bookingId)
+            result.type == ScannedQrType.MEMBER_CHECKIN && result.customerId != null -> evaluateMemberCheckIn(result.customerId)
+            else -> CheckInCheck(CheckInEligibility.BLOCKED, "This code isn't a member or booking pass.")
+        }
+    }
 
-        val record = recordCheckIn(custId, name, plan)
-        
-        // Add alert notification
-        addNotification(
-            NotificationItem(
-                id = "notif_scan_${System.currentTimeMillis()}",
-                title = "QR Scanner Check-in",
-                message = "$name (${result.shift ?: "Shift"}) checked in successfully via Camera QR Scanner.",
-                type = "Attendance",
-                timestamp = "Just now",
-                isRead = false
-            )
+    fun confirmQrCheckIn(result: ScannedQrResult, reason: String? = null): CheckInOutcome {
+        val check = evaluateScanCheckIn(result)
+        if (check.customer == null && check.booking == null) {
+            return CheckInOutcome.Rejected(check.message)
+        }
+        val outcome = checkIn(
+            customerId = check.customer?.id,
+            bookingId = check.booking?.id,
+            reason = reason,
+            source = "QR scanner"
         )
-        logAdminAction("Kishore Kumar", "Scanner check-in recorded for $name ($plan)", "QR Scanner")
-        return record
+        if (outcome is CheckInOutcome.Success) {
+            val visit = outcome.record
+            addNotification(
+                NotificationItem(
+                    id = "notif_scan_${System.currentTimeMillis()}",
+                    title = "QR Scanner Check-in",
+                    message = "${visit.customerName} (${result.shift ?: "Shift"}) checked in successfully via Camera QR Scanner.",
+                    type = "Attendance",
+                    timestamp = "Just now",
+                    isRead = false
+                )
+            )
+            logAdminAction("Kishore Kumar", "Scanner check-in recorded for ${visit.customerName} (${visit.membershipPlan})", "QR Scanner")
+        }
+        return outcome
     }
 }

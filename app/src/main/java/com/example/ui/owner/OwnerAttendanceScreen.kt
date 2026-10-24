@@ -341,10 +341,10 @@ fun OwnerAttendanceScreen(
         if (showManualCheckInDialog) {
             ManualCheckInDialog(
                 onDismiss = { showManualCheckInDialog = false },
-                onConfirm = { id, name, plan ->
-                    GymOwnerRepository.recordCheckIn(id, name, plan)
-                    refreshTrigger++
-                    showManualCheckInDialog = false
+                onCheckIn = { customerId, reason ->
+                    GymOwnerRepository.checkIn(customerId = customerId, reason = reason, source = "manual check-in").also {
+                        if (it is CheckInOutcome.Success) refreshTrigger++
+                    }
                 }
             )
         }
@@ -353,15 +353,13 @@ fun OwnerAttendanceScreen(
         if (showManualOverrideDialog) {
             ManualAttendanceOverrideDialog(
                 onDismiss = { showManualOverrideDialog = false },
-                onConfirmOverride = { customerId, customerName, plan, reason ->
-                    GymOwnerRepository.performAttendanceOverride(
-                        customerId = customerId,
-                        customerName = customerName,
-                        plan = plan,
-                        reason = reason
-                    )
-                    refreshTrigger++
-                    showManualOverrideDialog = false
+                onConfirmOverride = { customerId, reason ->
+                    GymOwnerRepository.performAttendanceOverride(customerId = customerId, reason = reason).also {
+                        if (it is CheckInOutcome.Success) {
+                            refreshTrigger++
+                            showManualOverrideDialog = false
+                        }
+                    }
                 }
             )
         }
@@ -1358,11 +1356,10 @@ private fun DetailLine(label: String, value: String) {
 @Composable
 private fun ManualCheckInDialog(
     onDismiss: () -> Unit,
-    onConfirm: (id: String, name: String, plan: String) -> Unit
+    onCheckIn: (customerId: String, reason: String?) -> CheckInOutcome
 ) {
-    var customerName by remember { mutableStateOf("") }
-    var customerId by remember { mutableStateOf("") }
-    var membershipPlan by remember { mutableStateOf("Monthly") }
+    var selectedMember by remember { mutableStateOf<CustomerItem?>(null) }
+    var rejection by remember { mutableStateOf<String?>(null) }
 
     OwnerModalDialog(onDismissRequest = onDismiss) {
         Column(
@@ -1384,47 +1381,26 @@ private fun ManualCheckInDialog(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            LiquidGlassTextField(
-                value = customerName,
-                onValueChange = { customerName = it },
-                label = "Customer Name",
-                placeholder = "e.g. Rahul Menon"
-            )
+            MemberPicker(selected = selectedMember, onSelect = { selectedMember = it; rejection = null })
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            LiquidGlassTextField(
-                value = customerId,
-                onValueChange = { customerId = it },
-                label = "Customer ID (Optional)",
-                placeholder = "e.g. c1"
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            LiquidGlassTextField(
-                value = membershipPlan,
-                onValueChange = { membershipPlan = it },
-                label = "Active Membership Plan",
-                placeholder = "e.g. Yearly, Monthly"
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0x35FFFFFF))
-                    .clickable {
-                        if (customerName.isNotBlank()) {
-                            onConfirm(customerId.ifBlank { "c_${System.currentTimeMillis() % 1000}" }, customerName, membershipPlan)
+            selectedMember?.let { member ->
+                Spacer(modifier = Modifier.height(14.dp))
+                val check = remember(member) { GymOwnerRepository.evaluateMemberCheckIn(member.id) }
+                CheckInGateSection(
+                    check = check,
+                    confirmLabel = "Confirm Check-in",
+                    onConfirm = { reason ->
+                        when (val outcome = onCheckIn(member.id, reason)) {
+                            is CheckInOutcome.Success -> onDismiss()
+                            is CheckInOutcome.Rejected -> rejection = outcome.message
                         }
                     }
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "Confirm Check-in", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                )
+            }
+
+            rejection?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = it, fontSize = 11.sp, color = StatusExpiredRed)
             }
         }
     }
@@ -1518,11 +1494,11 @@ fun ExportModalDialog(
 @Composable
 private fun ManualAttendanceOverrideDialog(
     onDismiss: () -> Unit,
-    onConfirmOverride: (String, String, String, String) -> Unit
+    onConfirmOverride: (customerId: String, reason: String) -> CheckInOutcome
 ) {
-    var memberName by remember { mutableStateOf("Rahul Menon") }
-    var selectedPlan by remember { mutableStateOf("All-Access Elite") }
-    var overrideReason by remember { mutableStateOf("Turnstile Hardware Failure") }
+    var selectedMember by remember { mutableStateOf<CustomerItem?>(null) }
+    var overrideReason by remember { mutableStateOf("Turnstile Hardware Breakdown") }
+    var rejection by remember { mutableStateOf<String?>(null) }
 
     OwnerModalDialog(onDismissRequest = onDismiss) {
         Column(
@@ -1559,32 +1535,19 @@ private fun ManualAttendanceOverrideDialog(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            LiquidGlassTextField(
-                value = memberName,
-                onValueChange = { memberName = it },
-                label = "Customer / Member Name",
-                placeholder = "e.g. Rahul Menon"
-            )
+            MemberPicker(selected = selectedMember, onSelect = { selectedMember = it; rejection = null })
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(text = "Membership Tier", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextMuted)
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("All-Access Elite", "Standard Pro", "Single-Center").forEach { pl ->
-                    val isSelected = selectedPlan == pl
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (isSelected) Color(0x35FFFFFF) else Color(0x15FFFFFF))
-                            .clickable { selectedPlan = pl }
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = pl, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isSelected) TextWhite else TextMuted)
-                    }
-                }
+            // Hard blocks (duplicate check-in) still apply; the override reason covers expired/pending/frozen
+            val check = selectedMember?.let { member ->
+                remember(member) { GymOwnerRepository.evaluateMemberCheckIn(member.id) }
+            }
+            if (check != null && check.eligibility != CheckInEligibility.ALLOWED) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = check.message,
+                    fontSize = 11.sp,
+                    color = if (check.eligibility == CheckInEligibility.BLOCKED) StatusExpiredRed else StatusPendingAmber
+                )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -1620,26 +1583,36 @@ private fun ManualAttendanceOverrideDialog(
 
             Spacer(modifier = Modifier.height(18.dp))
 
+            val canOverride = selectedMember != null && check?.eligibility != CheckInEligibility.BLOCKED
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(Color(0xFFD32F2F), Color(0xFFB71C1C))
-                        )
+                        if (canOverride) {
+                            Brush.horizontalGradient(colors = listOf(Color(0xFFD32F2F), Color(0xFFB71C1C)))
+                        } else {
+                            Brush.horizontalGradient(colors = listOf(Color(0x12FFFFFF), Color(0x12FFFFFF)))
+                        }
                     )
-                    .clickable {
-                        onConfirmOverride("mem_${System.currentTimeMillis()}", memberName, selectedPlan, overrideReason)
+                    .clickable(enabled = canOverride) {
+                        val member = selectedMember ?: return@clickable
+                        val outcome = onConfirmOverride(member.id, overrideReason)
+                        if (outcome is CheckInOutcome.Rejected) rejection = outcome.message
                     }
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Check, contentDescription = null, tint = TextWhite, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Check, contentDescription = null, tint = if (canOverride) TextWhite else TextMuted, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "Force Override to 'Attended'", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                    Text(text = "Force Override to 'Attended'", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (canOverride) TextWhite else TextMuted)
                 }
+            }
+
+            rejection?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = it, fontSize = 11.sp, color = StatusExpiredRed)
             }
         }
     }

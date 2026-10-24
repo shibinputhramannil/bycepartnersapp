@@ -29,6 +29,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.models.BookingItem
+import com.example.data.models.CheckInCheck
+import com.example.data.models.CheckInEligibility
+import com.example.data.models.CheckInOutcome
 import com.example.data.models.ShiftReminderSchedule
 import com.example.data.services.GymOwnerRepository
 import com.example.ui.components.*
@@ -47,7 +50,31 @@ fun OwnerBookingsScreen(
     var statusMessage by remember { mutableStateOf<String?>(null) }
     val bookings = remember { mutableStateListOf<BookingItem>().apply { addAll(GymOwnerRepository.getBookings()) } }
     var selectedBookingForDetail by remember { mutableStateOf<BookingItem?>(null) }
+    var bookingPendingCheckIn by remember { mutableStateOf<Pair<BookingItem, CheckInCheck>?>(null) }
     val shiftSchedules = remember(bookings.toList()) { GymOwnerRepository.getShiftReminderSchedules() }
+
+    fun completeArrival(booking: BookingItem, reason: String?) {
+        when (val outcome = GymOwnerRepository.markBookingArrived(booking.id, reason)) {
+            is CheckInOutcome.Success -> {
+                val index = bookings.indexOfFirst { it.id == booking.id }
+                if (index != -1) {
+                    bookings[index] = booking.copy(arrivalStatus = "Checked In", status = "Completed")
+                }
+                statusMessage = "✓ ${booking.customerName} marked as Arrived & Checked In for ${booking.time} slot."
+            }
+            is CheckInOutcome.Rejected -> statusMessage = "⚠️ ${outcome.message}"
+        }
+    }
+
+    // Active members check in straight away; others need the reason dialog; hard blocks only show a message
+    fun requestArrival(booking: BookingItem) {
+        val check = GymOwnerRepository.evaluateBookingCheckIn(booking.id)
+        when (check.eligibility) {
+            CheckInEligibility.ALLOWED -> completeArrival(booking, null)
+            CheckInEligibility.BLOCKED -> statusMessage = "⚠️ ${check.message}"
+            else -> bookingPendingCheckIn = booking to check
+        }
+    }
 
     val filteredBookings = remember(searchQuery, selectedFilter, selectedShiftFilter, bookings.toList()) {
         bookings.filter { item ->
@@ -339,14 +366,7 @@ fun OwnerBookingsScreen(
                                 GymOwnerRepository.cancelBooking(booking.id)
                             }
                         },
-                        onMarkArrived = {
-                            val index = bookings.indexOfFirst { it.id == booking.id }
-                            if (index != -1) {
-                                bookings[index] = booking.copy(arrivalStatus = "Checked In", status = "Completed")
-                                GymOwnerRepository.markBookingArrived(booking.id)
-                                statusMessage = "✓ ${booking.customerName} marked as Arrived & Checked In for ${booking.time} slot."
-                            }
-                        }
+                        onMarkArrived = { requestArrival(booking) }
                     )
                 }
             }
@@ -382,13 +402,20 @@ fun OwnerBookingsScreen(
                     selectedBookingForDetail = null
                 },
                 onMarkArrived = {
-                    val index = bookings.indexOfFirst { it.id == booking.id }
-                    if (index != -1) {
-                        bookings[index] = booking.copy(arrivalStatus = "Checked In", status = "Completed")
-                        GymOwnerRepository.markBookingArrived(booking.id)
-                        statusMessage = "✓ ${booking.customerName} marked as Arrived & Checked In."
-                    }
                     selectedBookingForDetail = null
+                    requestArrival(booking)
+                }
+            )
+        }
+
+        bookingPendingCheckIn?.let { (booking, check) ->
+            CheckInGateDialog(
+                title = "Check In ${booking.customerName}",
+                check = check,
+                onDismiss = { bookingPendingCheckIn = null },
+                onConfirm = { reason ->
+                    bookingPendingCheckIn = null
+                    completeArrival(booking, reason)
                 }
             )
         }

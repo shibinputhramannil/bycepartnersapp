@@ -364,20 +364,29 @@ private fun GroupWorkoutSessionCard(
     }
 }
 
+private val substituteCoachOptions = listOf(
+    "Coach Rahul (Freelance Boxing & HIIT)",
+    "Coach Divya (Certified Yoga & Mobility)",
+    "Coach Sanjay (In-House S&C)",
+    "Coach Anjali (Zumba Licensed)",
+    "Coach Ramesh (Combat Trainer)"
+)
+
+// "Coach Divya (Certified Yoga & Mobility)" -> "Coach Divya"
+internal fun substituteCoachName(option: String): String = option.substringBefore(" (").trim()
+
+// Excludes the session's current coach so a coach can't substitute for themselves
+internal fun substituteCandidates(options: List<String>, currentCoach: String): List<String> =
+    options.filterNot { substituteCoachName(it).equals(currentCoach.trim(), ignoreCase = true) }
+
 @Composable
 private fun AssignSubstituteModal(
     session: GroupWorkoutSession,
     onDismiss: () -> Unit,
     onAssign: (String) -> Unit
 ) {
-    var selectedCoach by remember { mutableStateOf("Coach Rahul (Freelance)") }
-    val availableCoaches = listOf(
-        "Coach Rahul (Freelance Boxing & HIIT)",
-        "Coach Divya (Certified Yoga & Mobility)",
-        "Coach Sanjay (In-House S&C)",
-        "Coach Anjali (Zumba Licensed)",
-        "Coach Ramesh (Combat Trainer)"
-    )
+    var selectedCoach by remember { mutableStateOf<String?>(null) }
+    val availableCoaches = remember(session.coachName) { substituteCandidates(substituteCoachOptions, session.coachName) }
 
     OwnerModalDialog(onDismissRequest = onDismiss) {
         Column(
@@ -429,20 +438,28 @@ private fun AssignSubstituteModal(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val chosen = selectedCoach
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color(0xFF6B9330), Color(0xFF4E7320))
-                        )
+                        if (chosen != null) {
+                            Brush.verticalGradient(colors = listOf(Color(0xFF6B9330), Color(0xFF4E7320)))
+                        } else {
+                            Brush.verticalGradient(colors = listOf(Color(0x12FFFFFF), Color(0x12FFFFFF)))
+                        }
                     )
-                    .clickable { onAssign(selectedCoach.split(" ")[1]) }
+                    .clickable(enabled = chosen != null) { chosen?.let { onAssign(substituteCoachName(it)) } }
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "Confirm Coach Assignment", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                Text(
+                    text = if (chosen != null) "Confirm Coach Assignment" else "Select a coach to assign",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (chosen != null) TextWhite else TextMuted
+                )
             }
         }
     }

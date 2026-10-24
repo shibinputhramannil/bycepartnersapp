@@ -51,6 +51,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import com.example.data.models.CheckInOutcome
 import com.example.data.models.ScannedQrResult
 import com.example.data.models.ScannedQrType
 import com.example.data.services.GymOwnerRepository
@@ -644,28 +645,23 @@ fun OwnerQrScannerModal(
                 // Primary Action: Confirm Check-In / Action
                 when (result.type) {
                     ScannedQrType.MEMBER_CHECKIN, ScannedQrType.BOOKING_PASS -> {
-                        Button(
-                            onClick = {
-                                val attendanceRecord = GymOwnerRepository.confirmQrCheckIn(result)
-                                if (attendanceRecord != null) {
-                                    checkInSuccessMessage = "✓ ${attendanceRecord.customerName} successfully checked in at ${attendanceRecord.checkInTime}!"
-                                    onScannedSuccessfully(result)
-                                    Toast.makeText(context, "Check-in Confirmed!", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    Toast.makeText(context, "This code doesn't match a member or booking", Toast.LENGTH_SHORT).show()
+                        // Hidden after a successful check-in; re-evaluating would report a duplicate
+                        if (checkInSuccessMessage == null) {
+                            val check = remember(result) { GymOwnerRepository.evaluateScanCheckIn(result) }
+                            CheckInGateSection(
+                                check = check,
+                                confirmLabel = "Confirm Check-In",
+                                onConfirm = { reason ->
+                                    when (val outcome = GymOwnerRepository.confirmQrCheckIn(result, reason)) {
+                                        is CheckInOutcome.Success -> {
+                                            checkInSuccessMessage = "✓ ${outcome.record.customerName} successfully checked in at ${outcome.record.checkInTime}!"
+                                            onScannedSuccessfully(result)
+                                            Toast.makeText(context, "Check-in Confirmed!", Toast.LENGTH_SHORT).show()
+                                        }
+                                        is CheckInOutcome.Rejected ->
+                                            Toast.makeText(context, outcome.message, Toast.LENGTH_SHORT).show()
+                                    }
                                 }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = StatusActiveGreen),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Confirm Check-In & Log Visit",
-                                color = Color.Black,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
                             )
                         }
                     }

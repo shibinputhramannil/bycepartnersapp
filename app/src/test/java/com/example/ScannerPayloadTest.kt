@@ -1,10 +1,11 @@
 package com.example
 
+import com.example.data.models.CheckInOutcome
 import com.example.data.models.ScannedQrType
 import com.example.data.services.GymOwnerRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ScannerPayloadTest {
@@ -13,7 +14,9 @@ class ScannerPayloadTest {
     val result = GymOwnerRepository.processScannedQrPayload(payload)
     assertFalse("'$payload' should not be recognized", result.isRecognizedGymEntity)
     assertEquals(ScannedQrType.UNIVERSAL_CODE, result.type)
-    assertNull("'$payload' should not check anyone in", GymOwnerRepository.confirmQrCheckIn(result))
+    // A reason must not unlock an unrecognized code either
+    val outcome = GymOwnerRepository.confirmQrCheckIn(result, reason = "Manager approved")
+    assertTrue("'$payload' should not check anyone in", outcome is CheckInOutcome.Rejected)
   }
 
   @Test

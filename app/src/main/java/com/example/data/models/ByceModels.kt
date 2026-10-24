@@ -90,10 +90,42 @@ data class CustomerItem(
     val membershipPlan: String,
     val startDate: String,
     val endDate: String,
-    val status: String, // Active, Expired, Pending
+    val status: String, // See MemberStatus
     val joinedDate: String,
     val avatarInitials: String = ""
 )
+
+/**
+ * Member / membership status values shared by customers and memberships
+ */
+object MemberStatus {
+    const val ACTIVE = "Active"
+    const val EXPIRED = "Expired"
+    const val PENDING = "Pending"
+    const val FROZEN = "On Hold (Frozen)"
+}
+
+/**
+ * Check-in eligibility rules
+ * - ALLOWED: check in normally
+ * - NEEDS_REASON: expired or pending membership; staff may check in with a reason
+ * - BLOCKED_OVERRIDABLE: frozen membership; blocked unless staff override with a reason
+ * - BLOCKED: unknown member, unrecognized membership status, unknown or cancelled booking,
+ *   or duplicate check-in; no override
+ */
+enum class CheckInEligibility { ALLOWED, NEEDS_REASON, BLOCKED_OVERRIDABLE, BLOCKED }
+
+data class CheckInCheck(
+    val eligibility: CheckInEligibility,
+    val message: String,
+    val customer: CustomerItem? = null,
+    val booking: BookingItem? = null
+)
+
+sealed class CheckInOutcome {
+    data class Success(val record: AttendanceItem) : CheckInOutcome()
+    data class Rejected(val message: String) : CheckInOutcome()
+}
 
 /**
  * Membership Entity
@@ -402,6 +434,7 @@ data class ScannedQrResult(
     val subtitle: String,
     val badgeText: String,
     val customerId: String? = null,
+    val bookingId: String? = null,
     val customerName: String? = null,
     val membershipPlan: String? = null,
     val status: String? = null,

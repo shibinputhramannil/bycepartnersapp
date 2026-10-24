@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.data.models.MemberStatus
 import com.example.data.models.MembershipItem
 import com.example.data.services.GymOwnerRepository
 import com.example.ui.components.*
@@ -231,6 +232,11 @@ fun OwnerMembershipsScreen(
                 onDismiss = { selectedMembershipForDetail = null },
                 onDeferClick = {
                     selectedMembershipForDefer = item
+                },
+                onUnfreezeClick = {
+                    GymOwnerRepository.resumeMembership(item.id)
+                    refreshKey++
+                    selectedMembershipForDetail = null
                 }
             )
         }
@@ -416,8 +422,10 @@ private fun MembershipRowCard(
 private fun MembershipDetailModal(
     item: MembershipItem,
     onDismiss: () -> Unit,
-    onDeferClick: () -> Unit
+    onDeferClick: () -> Unit,
+    onUnfreezeClick: () -> Unit
 ) {
+    val isFrozen = item.status == MemberStatus.FROZEN
 
     OwnerModalDialog(onDismissRequest = onDismiss) {
         Column(
@@ -472,20 +480,25 @@ private fun MembershipDetailModal(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Freeze / Defer Button
+                // Freeze / Defer Button (Unfreeze while the membership is paused)
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(14.dp))
                         .background(Color(0x3038BDF8))
-                        .clickable { onDeferClick() }
+                        .clickable { if (isFrozen) onUnfreezeClick() else onDeferClick() }
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.PauseCircle, contentDescription = null, tint = StatusInfoBlue, modifier = Modifier.size(16.dp))
+                        Icon(
+                            if (isFrozen) Icons.Default.PlayCircle else Icons.Default.PauseCircle,
+                            contentDescription = null,
+                            tint = StatusInfoBlue,
+                            modifier = Modifier.size(16.dp)
+                        )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = "Freeze / Defer", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = StatusInfoBlue)
+                        Text(text = if (isFrozen) "Unfreeze" else "Freeze / Defer", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = StatusInfoBlue)
                     }
                 }
 
