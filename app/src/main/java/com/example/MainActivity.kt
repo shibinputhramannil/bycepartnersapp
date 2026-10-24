@@ -12,12 +12,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.ui.auth.AuthScreen
-import com.example.ui.onboarding.OnboardingScreen
 import com.example.ui.owner.GymOwnerMainScreen
 import com.example.ui.theme.MyApplicationTheme
 
 enum class AppScreen {
-    ONBOARDING,
     AUTH,
     GYM_OWNER_DASHBOARD
 }
@@ -40,21 +38,10 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxSize()
               )
             }
-            AppScreen.ONBOARDING -> {
-              OnboardingScreen(
-                onGetStartedClick = {
-                  currentScreen = AppScreen.AUTH
-                },
-                modifier = Modifier.fillMaxSize()
-              )
-            }
             AppScreen.AUTH -> {
               AuthScreen(
                 onAuthComplete = {
                   currentScreen = AppScreen.GYM_OWNER_DASHBOARD
-                },
-                onBackToOnboarding = {
-                  currentScreen = AppScreen.ONBOARDING
                 },
                 modifier = Modifier.fillMaxSize()
               )

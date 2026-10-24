@@ -74,7 +74,6 @@ enum class AuthMode {
 @Composable
 fun AuthScreen(
     onAuthComplete: () -> Unit = {},
-    onBackToOnboarding: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var authMode by remember { mutableStateOf(AuthMode.LOGIN) }

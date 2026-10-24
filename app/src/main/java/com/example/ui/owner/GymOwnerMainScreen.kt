@@ -34,7 +34,7 @@ enum class OwnerScreenRoute(val title: String) {
     ATTENDANCE("Attendance"),
     CUSTOMERS("Customers"),
     MEMBERSHIPS("Memberships"),
-    PLANS("Membership Plans"),
+    PLANS("Accepted Passes"),
     PAYMENTS("Payments"),
     BOOKINGS("Bookings"),
     GYM_PROFILE("Gym Profile"),

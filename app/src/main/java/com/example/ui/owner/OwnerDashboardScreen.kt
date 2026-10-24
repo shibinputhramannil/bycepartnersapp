@@ -563,8 +563,8 @@ fun OwnerDashboardScreen(
                 modifier = Modifier.weight(1f)
             )
             QuickActionButton(
-                label = "Create Plan",
-                icon = Icons.Default.AddCard,
+                label = "Passes",
+                icon = Icons.Default.CardMembership,
                 onClick = onNavigateToPlans,
                 modifier = Modifier.weight(1f)
             )
@@ -818,6 +818,7 @@ fun OwnerDashboardScreen(
             actionLabel = "View All",
             onActionClick = onNavigateToPayments
         )
+        DemoDataNotice(text = "Demo data, not live BYCE payments.")
         Spacer(modifier = Modifier.height(8.dp))
 
         pendingPaymentsList.forEach { pending ->
@@ -917,6 +918,7 @@ fun OwnerDashboardScreen(
             actionLabel = "View All",
             onActionClick = onNavigateToPayments
         )
+        DemoDataNotice(text = "Demo data, not live BYCE payments.")
         Spacer(modifier = Modifier.height(8.dp))
 
         recentPayments.forEach { payment ->

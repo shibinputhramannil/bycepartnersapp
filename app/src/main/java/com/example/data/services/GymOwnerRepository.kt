@@ -141,7 +141,8 @@ object GymOwnerRepository {
             isPopular = false,
             monthlyPrice = 399.0,
             quarterlyPrice = 999.0,
-            annualPrice = 2999.0
+            annualPrice = 2999.0,
+            grantsGymAccess = false
         ),
         MembershipPlanItem(
             id = "plan_coaching_5",
@@ -166,7 +167,8 @@ object GymOwnerRepository {
             isPopular = false,
             monthlyPrice = 1499.0,
             quarterlyPrice = 3899.0,
-            annualPrice = 11999.0
+            annualPrice = 11999.0,
+            grantsGymAccess = false
         )
     )
 
@@ -404,50 +406,8 @@ object GymOwnerRepository {
     // GET /api/v1/admin/memberships/
     fun getMemberships(): List<MembershipItem> = sampleMemberships
 
-    // GET /api/v1/gyms/{gym_id}/membership-plans/
-    fun getMembershipPlans(): List<MembershipPlanItem> = samplePlans
-
-    fun addPlan(plan: MembershipPlanItem) {
-        samplePlans.add(plan)
-    }
-
-    fun togglePlanStatus(planId: String) {
-        val index = samplePlans.indexOfFirst { it.id == planId }
-        if (index != -1) {
-            val p = samplePlans[index]
-            samplePlans[index] = p.copy(isActive = !p.isActive)
-        }
-    }
-
-    private val sampleFreezes = mutableListOf(
-        MembershipFreezeRecord(
-            id = "frz_1",
-            planName = "All-Access Elite",
-            startDate = "15 Oct 2026",
-            endDate = "25 Oct 2026",
-            pauseDaysUsed = 10,
-            pauseDaysRemaining = 35,
-            reason = "Work Travel / Vacation",
-            status = "Scheduled"
-        )
-    )
-
-    fun getMembershipFreezes(): List<MembershipFreezeRecord> = sampleFreezes
-
-    fun requestMembershipFreeze(planName: String, startDate: String, endDate: String, days: Int, reason: String) {
-        val freeze = MembershipFreezeRecord(
-            id = "frz_${System.currentTimeMillis()}",
-            planName = planName,
-            startDate = startDate,
-            endDate = endDate,
-            pauseDaysUsed = days,
-            pauseDaysRemaining = (45 - days).coerceAtLeast(0),
-            reason = reason,
-            status = "Active"
-        )
-        sampleFreezes.add(0, freeze)
-        logAdminAction("Kishore Kumar", "Approved Membership freeze ($days days) from $startDate to $endDate for $planName", "Memberships")
-    }
+    // BYCE passes that give entry at this gym. Tiers and prices are managed by BYCE (read-only here).
+    fun getAcceptedPasses(): List<MembershipPlanItem> = samplePlans.filter { it.isActive && it.grantsGymAccess }
 
     // ----------------------------------------------------
     // 1. MANUAL ATTENDANCE OVERRIDE ENGINE
@@ -491,54 +451,6 @@ object GymOwnerRepository {
             )
         }
         return outcome
-    }
-
-    // ----------------------------------------------------
-    // 2. MEMBERSHIP DEFERMENT & AUTO-RECALCULATED FREEZES
-    // ----------------------------------------------------
-    fun deferMembership(membershipId: String, freezeDays: Int, reason: String, staffName: String = "Kishore Kumar"): Boolean {
-        val index = sampleMemberships.indexOfFirst { it.id == membershipId }
-        if (index != -1) {
-            val m = sampleMemberships[index]
-            val updatedEndDate = "${m.endDate} (+${freezeDays}d deferred)"
-            sampleMemberships[index] = m.copy(
-                status = MemberStatus.FROZEN,
-                endDate = updatedEndDate
-            )
-            setCustomerStatusFor(m, MemberStatus.FROZEN)
-            requestMembershipFreeze(
-                planName = m.planName,
-                startDate = "Today",
-                endDate = updatedEndDate,
-                days = freezeDays,
-                reason = reason
-            )
-            logAdminAction(staffName, "Placed membership for ${m.customerName} on hold ($freezeDays days deferred). Reason: $reason", "Memberships")
-            return true
-        }
-        return false
-    }
-
-    // Ends a freeze early. The deferred end date is kept.
-    fun resumeMembership(membershipId: String, staffName: String = "Kishore Kumar"): Boolean {
-        val index = sampleMemberships.indexOfFirst { it.id == membershipId }
-        if (index == -1 || sampleMemberships[index].status != MemberStatus.FROZEN) return false
-        val m = sampleMemberships[index]
-        sampleMemberships[index] = m.copy(status = MemberStatus.ACTIVE)
-        setCustomerStatusFor(m, MemberStatus.ACTIVE)
-        logAdminAction(staffName, "Unfroze membership for ${m.customerName}", "Memberships")
-        return true
-    }
-
-    // Keeps the member record's status in sync with their membership
-    private fun setCustomerStatusFor(membership: MembershipItem, status: String) {
-        val index = sampleCustomers.indexOfFirst {
-            it.email.equals(membership.customerEmail, ignoreCase = true) ||
-                it.name.equals(membership.customerName, ignoreCase = true)
-        }
-        if (index != -1) {
-            sampleCustomers[index] = sampleCustomers[index].copy(status = status)
-        }
     }
 
     // ----------------------------------------------------
@@ -605,63 +517,6 @@ object GymOwnerRepository {
 
     fun dismissTrialBuzzer() {
         activeTrialAlert = null
-    }
-
-    // ----------------------------------------------------
-    // 8. POINT OF SALE (POS) & BILLING TRANSACTIONS
-    // ----------------------------------------------------
-    private val samplePosInvoices = mutableListOf(
-        PosInvoiceItem("inv_1", "POS-2026-0891", "Rahul Menon", "+91 98471 22334", "Membership Renewal", "All-Access Elite (Annual)", 14999.0, 2699.82, 17698.82, "Razorpay POS Terminal", "Kishore Kumar", "Paid", "Today, 11:20 AM"),
-        PosInvoiceItem("inv_2", "POS-2026-0890", "Deepak Varma", "+91 94471 55667", "On-Site Upgrade", "Upgrade to Standard Pro (3-Mo)", 3299.0, 593.82, 3892.82, "Dynamic UPI QR", "Staff Kavya", "Paid", "Today, 10:45 AM"),
-        PosInvoiceItem("inv_3", "POS-2026-0889", "Ananya Nair", "+91 97455 33445", "Merch Purchase", "BYCE High-Performance Gym Kit", 1299.0, 233.82, 1532.82, "Card Swipe", "Kishore Kumar", "Paid", "Yesterday, 06:15 PM"),
-        PosInvoiceItem("inv_4", "POS-2026-0888", "Rohan Pillai", "+91 94470 11223", "Billing Refund", "Unused Session Package Refund", -1499.0, -269.82, -1768.82, "Original Payment Mode", "Kishore Kumar", "Refunded", "24 Sep 2026")
-    )
-
-    fun getPosInvoices(): List<PosInvoiceItem> = samplePosInvoices
-
-    fun createPosInvoice(
-        customerName: String,
-        customerPhone: String,
-        type: String,
-        itemName: String,
-        amount: Double,
-        paymentMode: String
-    ): PosInvoiceItem {
-        val gst = amount * 0.18
-        val total = amount + gst
-        val inv = PosInvoiceItem(
-            id = "inv_${System.currentTimeMillis()}",
-            invoiceNumber = "POS-2026-${(1000..9999).random()}",
-            customerName = customerName,
-            customerPhone = customerPhone,
-            transactionType = type,
-            itemName = itemName,
-            baseAmount = amount,
-            gstTax = gst,
-            totalAmount = total,
-            paymentMode = paymentMode,
-            billingStaff = "Kishore Kumar",
-            status = "Paid",
-            timestamp = "Just now"
-        )
-        samplePosInvoices.add(0, inv)
-        samplePayments.add(
-            0,
-            PaymentItem(
-                transactionId = inv.invoiceNumber,
-                customerName = customerName,
-                planName = itemName,
-                amount = total,
-                provider = paymentMode,
-                status = "Successful",
-                date = "Today",
-                orderId = inv.id,
-                paymentId = "POS_APP",
-                paidAt = "Just now"
-            )
-        )
-        logAdminAction("Kishore Kumar", "Generated POS Invoice ${inv.invoiceNumber} for $customerName: ₹${total.toInt()} via $paymentMode", "Payments")
-        return inv
     }
 
     // GET /api/v1/admin/payments/
@@ -1055,14 +910,6 @@ object GymOwnerRepository {
 
     fun getPendingPayments(): List<PendingPaymentItem> = samplePendingPayments
 
-    fun recordPendingPaymentPaid(paymentId: String, recordedBy: String = "Kishore Kumar") {
-        val index = samplePendingPayments.indexOfFirst { it.id == paymentId }
-        if (index != -1) {
-            val item = samplePendingPayments.removeAt(index)
-            logAdminAction(recordedBy, "Recorded manual payment for ${item.customerName} (₹${item.amount.toInt()})", "Payments")
-        }
-    }
-
     // ----------------------------------------------------
     // FEATURE 11: GYM CAPACITY & LIVE OCCUPANCY
     // ----------------------------------------------------
@@ -1118,10 +965,9 @@ object GymOwnerRepository {
     private val sampleActivityLogs = mutableListOf(
         AdminActivityLogItem("log_1", "Kishore Kumar", "Regenerated Gym Check-in QR Payload", "Gym QR", "Today, 10:14 AM"),
         AdminActivityLogItem("log_2", "Sanjay Nambiar", "Recorded manual check-in for Rahul Menon", "Attendance", "Today, 10:04 AM"),
-        AdminActivityLogItem("log_3", "Kishore Kumar", "Updated Quarterly Membership Plan pricing to ₹3,999", "Plans", "Today, 09:30 AM"),
         AdminActivityLogItem("log_4", "Kavya Sreedharan", "Added CRM note for Ananya Nair", "Customers", "Today, 09:16 AM"),
-        AdminActivityLogItem("log_5", "Kishore Kumar", "Verified bank settlement for TXN-984210", "Payments", "Yesterday, 06:45 PM"),
-        AdminActivityLogItem("log_6", "Sanjay Nambiar", "Changed operating status to OPEN", "Gym Status", "Yesterday, 05:30 AM")    )
+        AdminActivityLogItem("log_6", "Sanjay Nambiar", "Changed operating status to OPEN", "Gym Status", "Yesterday, 05:30 AM")
+    )
 
     fun getAdminActivityLogs(): List<AdminActivityLogItem> = sampleActivityLogs
 

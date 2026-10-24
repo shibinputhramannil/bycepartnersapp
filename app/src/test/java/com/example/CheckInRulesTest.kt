@@ -48,20 +48,18 @@ class CheckInRulesTest {
   }
 
   @Test
-  fun frozen_member_is_blocked_unless_overridden_and_status_follows_freeze_and_unfreeze() {
-    // m3 / c3 Mohammed Faizal
-    assertTrue(repo.deferMembership("m3", freezeDays = 10, reason = "Travel"))
-    assertEquals(MemberStatus.FROZEN, repo.findCustomer("c3")?.status)
-    assertEquals(CheckInEligibility.BLOCKED_OVERRIDABLE, repo.evaluateMemberCheckIn("c3").eligibility)
-    assertTrue(repo.checkIn(customerId = "c3", source = "test") is CheckInOutcome.Rejected)
+  fun frozen_member_is_blocked_unless_overridden_with_a_reason() {
+    // Partners can't freeze a pass; a frozen status comes from BYCE, so add one directly
+    repo.addCustomer(
+      CustomerItem("t_frozen", "Test Frozen Member", "frozen.member@example.com", "+91 90000 00002",
+        "Monthly", "01 Oct 2026", "31 Oct 2026", MemberStatus.FROZEN, "01 Oct 2026", "TF")
+    )
+    assertEquals(CheckInEligibility.BLOCKED_OVERRIDABLE, repo.evaluateMemberCheckIn("t_frozen").eligibility)
+    assertTrue(repo.checkIn(customerId = "t_frozen", source = "test") is CheckInOutcome.Rejected)
 
-    val override = repo.checkIn(customerId = "c3", reason = "Member ending pause early", source = "test")
+    val override = repo.checkIn(customerId = "t_frozen", reason = "Member ending pause early", source = "test")
     assertTrue(override is CheckInOutcome.Success)
     assertTrue(repo.getAdminActivityLogs().first().action.contains("Reason: Member ending pause early"))
-
-    assertTrue(repo.resumeMembership("m3"))
-    assertEquals(MemberStatus.ACTIVE, repo.findCustomer("c3")?.status)
-    assertEquals(MemberStatus.ACTIVE, repo.getMemberships().first { it.id == "m3" }.status)
   }
 
   @Test

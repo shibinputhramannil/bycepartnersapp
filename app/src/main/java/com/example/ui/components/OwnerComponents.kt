@@ -473,6 +473,26 @@ fun OwnerSectionHeader(
     }
 }
 
+// Marks sample figures so they aren't mistaken for live BYCE data
+@Composable
+fun DemoDataNotice(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(StatusPendingAmberBg)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.Info, contentDescription = null, tint = StatusPendingAmber, modifier = Modifier.size(14.dp))
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(text = text, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = StatusPendingAmber)
+    }
+}
+
 // ---------------------------------------------------------------------------
 // 6. LOADING SKELETON, EMPTY STATE & ERROR STATE
 // ---------------------------------------------------------------------------
@@ -631,7 +651,7 @@ fun OwnerNavigationDrawerSheet(
         OwnerNavItem("Attendance", Icons.Default.QrCodeScanner, badge = badgeFor(todayCheckIns)),
         OwnerNavItem("Customers", Icons.Default.People),
         OwnerNavItem("Memberships", Icons.Default.CardMembership),
-        OwnerNavItem("Membership Plans", Icons.Default.PriceCheck),
+        OwnerNavItem("Accepted Passes", Icons.Default.PriceCheck),
         OwnerNavItem("Payments", Icons.Default.Payment),
         OwnerNavItem("Bookings", Icons.Default.EventAvailable, badge = badgeFor(upcomingBookings)),
         OwnerNavItem("Gym Profile", Icons.Default.FitnessCenter),

@@ -191,8 +191,9 @@ fun OwnerGymScreen(
                             Text(text = "Operating Hours", fontSize = 11.sp, color = ByceCoolGray)
                             Text(text = "${operatingStatus.openingTime} - ${operatingStatus.closingTime}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextWhite)
                         }
+                        // Read-only: listing status is set by BYCE, not the partner
                         Column(horizontalAlignment = Alignment.End) {
-                            Text(text = "Platform Visibility", fontSize = 11.sp, color = ByceCoolGray)
+                            Text(text = "BYCE Listing", fontSize = 11.sp, color = ByceCoolGray)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 OwnerStatusBadge(status = operatingStatus.visibilityStatus)
                             }
@@ -201,7 +202,7 @@ fun OwnerGymScreen(
 
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Listing visibility requires Super Admin approval to modify.",
+                        text = "Managed by BYCE. Contact BYCE support to change your listing.",
                         fontSize = 10.sp,
                         color = TextMuted
                     )
@@ -439,10 +440,6 @@ fun OwnerGymScreen(
                         Column {
                             Text(text = "Longitude", fontSize = 11.sp, color = ByceCoolGray)
                             Text(text = "${gymProfile.longitude}° E", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextWhite)
-                        }
-                        Column {
-                            Text(text = "Discovery Status", fontSize = 11.sp, color = ByceCoolGray)
-                            OwnerStatusBadge(status = "Active")
                         }
                     }
 

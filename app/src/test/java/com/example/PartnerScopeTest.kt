@@ -29,6 +29,11 @@ class PartnerScopeTest {
   }
 
   @Test
+  fun plans_route_is_labelled_as_accepted_passes() {
+    assertEquals("Accepted Passes", OwnerScreenRoute.PLANS.title)
+  }
+
+  @Test
   fun member_without_recorded_events_has_an_empty_timeline() {
     // c8 Vivek Raj has no sample activity events
     assertTrue(repo.getCustomerActivityTimeline("c8").isEmpty())

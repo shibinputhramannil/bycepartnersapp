@@ -144,7 +144,8 @@ data class MembershipItem(
 )
 
 /**
- * Membership Plan Tier (Cult-inspired 5 Tiers)
+ * BYCE membership pass tier. Tiers and prices are set by BYCE; partners only see
+ * which passes are accepted at their gym (grantsGymAccess).
  */
 data class MembershipPlanItem(
     val id: String,
@@ -163,21 +164,8 @@ data class MembershipPlanItem(
     val isPopular: Boolean = false,
     val monthlyPrice: Double = price,
     val quarterlyPrice: Double = price * 2.6,
-    val annualPrice: Double = price * 8.0
-)
-
-/**
- * Membership Pause / Freeze Engine
- */
-data class MembershipFreezeRecord(
-    val id: String,
-    val planName: String,
-    val startDate: String,
-    val endDate: String,
-    val pauseDaysUsed: Int,
-    val pauseDaysRemaining: Int,
-    val reason: String,
-    val status: String = "Active"
+    val annualPrice: Double = price * 8.0,
+    val grantsGymAccess: Boolean = true // false for digital-only / coaching-only passes
 )
 
 /**
@@ -479,23 +467,4 @@ data class TrialCheckInBuzzerAlert(
     val isAudioAlertPlaying: Boolean = true,
     val assignedGreeter: String? = null,
     val isAcknowledged: Boolean = false
-)
-
-/**
- * 8. Point of Sale (POS) & Billing Invoice
- */
-data class PosInvoiceItem(
-    val id: String,
-    val invoiceNumber: String,
-    val customerName: String,
-    val customerPhone: String,
-    val transactionType: String, // On-Site Upgrade, Membership Renewal, Merch Purchase, Billing Refund
-    val itemName: String,
-    val baseAmount: Double,
-    val gstTax: Double,
-    val totalAmount: Double,
-    val paymentMode: String, // Razorpay POS, Dynamic UPI QR, Card Swipe, Cash
-    val billingStaff: String = "Kishore Kumar",
-    val status: String = "Paid", // Paid, Refunded, Pending
-    val timestamp: String = "Just now"
 )
