@@ -17,6 +17,15 @@ local.properties
 .env
 debug.keystore
 
+# Signing material: never commit keystores, passwords or signing properties
+*.jks
+*.keystore
+*.p12
+*.pem
+key.properties
+keystore.properties
+signing.properties
+
 # Flutter/Dart generated files
 .dart_tool/
 .flutter-plugins

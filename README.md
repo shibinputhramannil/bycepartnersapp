@@ -95,12 +95,18 @@ Unit tests run on the JVM; the UI tests use Robolectric and need no device.
 
 Camera scanning, the flip-camera and torch buttons, and the screens' appearance have not been verified on a device.
 
+## Release configuration
+
+- Release builds use R8 code shrinking and resource shrinking. Test release builds on a device after changes, and add keep rules to `app/proguard-rules.pro` if something breaks.
+- The app requests no network permissions until backend networking is added. ML Kit's analytics library merges `INTERNET` in, so the app manifest removes it explicitly; restore both when adding a backend.
+- Backup and device-to-device transfer are disabled, and cleartext traffic is off.
+- Keystores, passwords and signing property files are gitignored. Never commit them.
+
 ## Before release
 
 These still need to be done before the app can ship:
 
-- Final application ID (currently `com.aistudio.bycepartner.kxmpzq`; it cannot be changed after the first Play Store upload)
+- Final application ID and code namespace (currently `com.aistudio.bycepartner.kxmpzq` and `com.example`). The ID cannot be changed after the first Play Store upload, and it should be based on a domain BYCE owns.
 - Real authentication with staff roles
 - Backend API and local persistence in place of the sample repository, then remove the demo-data labels
-- Turn off cleartext traffic and configure backup rules
-- Enable minification and remove unused dependencies
+- Verify the R8 release build on a device
