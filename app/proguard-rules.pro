@@ -19,3 +19,10 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ML Kit creates its component registrars (e.g. BarcodeRegistrar) by reflection through
+# their no-arg constructors. The firebase-components version ML Kit pulls in (16.1.0) only
+# ships "-keep class * implements ComponentRegistrar", which in R8 full mode keeps the class
+# but not its constructor, so BarcodeScanning.getClient() crashed with a NullPointerException.
+# This is the rule newer firebase-components versions ship.
+-keep class * implements com.google.firebase.components.ComponentRegistrar { void <init>(); }
