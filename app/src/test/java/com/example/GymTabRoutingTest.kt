@@ -2,27 +2,19 @@ package com.example
 
 import com.example.ui.owner.GymTab
 import com.example.ui.owner.OwnerScreenRoute
-import com.example.ui.owner.gymTabFor
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class GymTabRoutingTest {
 
   @Test
-  fun gym_location_route_opens_the_location_tab() {
-    assertEquals(GymTab.LOCATION, gymTabFor(OwnerScreenRoute.GYM_LOCATION))
-    assertEquals("Location & Map", GymTab.LOCATION.label)
+  fun gym_screen_tabs_have_stable_labels() {
+    assertEquals(listOf("Profile", "Location & Map", "Check-in QR"), GymTab.entries.map { it.label })
   }
 
   @Test
-  fun gym_profile_route_opens_the_profile_tab() {
-    assertEquals(GymTab.PROFILE, gymTabFor(OwnerScreenRoute.GYM_PROFILE))
-  }
-
-  @Test
-  fun non_gym_routes_have_no_gym_tab() {
-    assertNull(gymTabFor(OwnerScreenRoute.DASHBOARD))
-    assertNull(gymTabFor(OwnerScreenRoute.PAYMENTS))
+  fun location_is_a_tab_of_gym_profile_not_a_separate_route() {
+    assertFalse(OwnerScreenRoute.entries.any { it.title == "Gym Location" })
   }
 }

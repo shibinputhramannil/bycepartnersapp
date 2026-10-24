@@ -739,6 +739,13 @@ object GymOwnerRepository {
     // Notifications
     fun getNotifications(): List<NotificationItem> = sampleNotifications
 
+    fun getUnreadNotificationCount(): Int = sampleNotifications.count { !it.isRead }
+
+    // Counts for the navigation drawer badges
+    fun getTodayCheckInCount(): Int = sampleAttendance.count { it.date == "Today" }
+
+    fun getUpcomingBookingCount(): Int = sampleBookings.count { it.status == "Upcoming" }
+
     fun markNotificationAsRead(id: String) {
         val index = sampleNotifications.indexOfFirst { it.id == id }
         if (index != -1) {

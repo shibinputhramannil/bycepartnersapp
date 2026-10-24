@@ -43,7 +43,7 @@ import com.example.ui.theme.*
 fun OwnerHeader(
     gymName: String = "Iron House Fitness",
     location: String = "Kozhikode, Kerala",
-    unreadCount: Int = 2,
+    unreadCount: Int = 0,
     ownerInitials: String = "KK",
     onMenuClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
@@ -618,21 +618,26 @@ fun OwnerNavigationDrawerSheet(
     currentScreenName: String,
     onNavigate: (String) -> Unit,
     onClose: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    todayCheckIns: Int = 0,
+    upcomingBookings: Int = 0,
+    unreadNotifications: Int = 0
 ) {
+    // Badges are hidden when the count is 0
+    fun badgeFor(count: Int): String? = count.takeIf { it > 0 }?.toString()
+
     val navItems = listOf(
         OwnerNavItem("Dashboard", Icons.Default.Dashboard),
-        OwnerNavItem("Attendance", Icons.Default.QrCodeScanner, badge = "86"),
+        OwnerNavItem("Attendance", Icons.Default.QrCodeScanner, badge = badgeFor(todayCheckIns)),
         OwnerNavItem("Customers", Icons.Default.People),
         OwnerNavItem("Memberships", Icons.Default.CardMembership),
         OwnerNavItem("Membership Plans", Icons.Default.PriceCheck),
         OwnerNavItem("Payments", Icons.Default.Payment),
-        OwnerNavItem("Bookings", Icons.Default.EventAvailable, badge = "42"),
+        OwnerNavItem("Bookings", Icons.Default.EventAvailable, badge = badgeFor(upcomingBookings)),
         OwnerNavItem("Gym Profile", Icons.Default.FitnessCenter),
-        OwnerNavItem("Gym Location", Icons.Default.PinDrop),
         OwnerNavItem("Staff", Icons.Default.Badge),
         OwnerNavItem("Activity Log", Icons.Default.History),
-        OwnerNavItem("Notifications", Icons.Default.Notifications, badge = "2"),
+        OwnerNavItem("Notifications", Icons.Default.Notifications, badge = badgeFor(unreadNotifications)),
         OwnerNavItem("Settings", Icons.Default.Settings)
     )
 

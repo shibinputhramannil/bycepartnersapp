@@ -16,9 +16,16 @@ class PartnerScopeTest {
   fun owner_routes_are_the_core_partner_workflows() {
     val expected = setOf(
       "DASHBOARD", "ATTENDANCE", "CUSTOMERS", "MEMBERSHIPS", "PLANS", "PAYMENTS", "BOOKINGS",
-      "GYM_PROFILE", "GYM_LOCATION", "STAFF", "ACTIVITY_LOG", "NOTIFICATIONS", "SETTINGS"
+      "GYM_PROFILE", "STAFF", "ACTIVITY_LOG", "NOTIFICATIONS", "SETTINGS"
     )
     assertEquals(expected, OwnerScreenRoute.entries.map { it.name }.toSet())
+  }
+
+  @Test
+  fun drawer_badge_counts_come_from_the_data_the_screens_show() {
+    assertEquals(repo.getNotifications().count { !it.isRead }, repo.getUnreadNotificationCount())
+    assertEquals(repo.getAttendanceRecords().count { it.date == "Today" }, repo.getTodayCheckInCount())
+    assertEquals(repo.getBookings().count { it.status == "Upcoming" }, repo.getUpcomingBookingCount())
   }
 
   @Test

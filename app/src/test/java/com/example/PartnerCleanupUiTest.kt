@@ -36,6 +36,30 @@ class PartnerCleanupUiTest {
     }
     composeTestRule.onNodeWithText("Attendance").assertExists()
     composeTestRule.onAllNodesWithText("Reports").assertCountEquals(0)
+    composeTestRule.onAllNodesWithText("Gym Location").assertCountEquals(0)
+  }
+
+  @Test
+  fun drawer_badges_show_passed_counts_and_hide_zero() {
+    composeTestRule.setContent {
+      MyApplicationTheme {
+        OwnerNavigationDrawerSheet(
+          currentScreenName = "Dashboard",
+          onNavigate = {},
+          onClose = {},
+          onLogout = {},
+          todayCheckIns = 8,
+          upcomingBookings = 0,
+          unreadNotifications = 3
+        )
+      }
+    }
+    composeTestRule.onNodeWithText("8").assertExists()
+    composeTestRule.onNodeWithText("3").assertExists()
+    // The old hardcoded badges must not appear
+    composeTestRule.onAllNodesWithText("86").assertCountEquals(0)
+    composeTestRule.onAllNodesWithText("42").assertCountEquals(0)
+    composeTestRule.onAllNodesWithText("0").assertCountEquals(0)
   }
 
   @Test

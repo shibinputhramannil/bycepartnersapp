@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.services.GymOwnerRepository
 import com.example.ui.components.*
 import com.example.ui.theme.*
 
@@ -37,18 +38,10 @@ enum class OwnerScreenRoute(val title: String) {
     PAYMENTS("Payments"),
     BOOKINGS("Bookings"),
     GYM_PROFILE("Gym Profile"),
-    GYM_LOCATION("Gym Location"),
     STAFF("Staff"),
     ACTIVITY_LOG("Activity Log"),
     NOTIFICATIONS("Notifications"),
     SETTINGS("Settings")
-}
-
-// Which Gym screen tab a drawer route opens; null for non-Gym routes
-internal fun gymTabFor(route: OwnerScreenRoute): GymTab? = when (route) {
-    OwnerScreenRoute.GYM_PROFILE -> GymTab.PROFILE
-    OwnerScreenRoute.GYM_LOCATION -> GymTab.LOCATION
-    else -> null
 }
 
 @Composable
@@ -58,6 +51,8 @@ fun GymOwnerMainScreen(
 ) {
     var currentRoute by remember { mutableStateOf(OwnerScreenRoute.DASHBOARD) }
     var isDrawerOpen by remember { mutableStateOf(false) }
+    // Recomputed on navigation so it reflects notifications read on another screen
+    val unreadNotifications = remember(currentRoute) { GymOwnerRepository.getUnreadNotificationCount() }
 
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -87,7 +82,7 @@ fun GymOwnerMainScreen(
             OwnerHeader(
                 gymName = "Iron House Fitness",
                 location = "Kozhikode, Kerala",
-                unreadCount = 2,
+                unreadCount = unreadNotifications,
                 ownerInitials = "KK",
                 onMenuClick = { isDrawerOpen = true },
                 onNotificationClick = { currentRoute = OwnerScreenRoute.NOTIFICATIONS },
@@ -121,8 +116,7 @@ fun GymOwnerMainScreen(
                         OwnerScreenRoute.PLANS -> OwnerPlansScreen()
                         OwnerScreenRoute.PAYMENTS -> OwnerPaymentsScreen()
                         OwnerScreenRoute.BOOKINGS -> OwnerBookingsScreen()
-                        OwnerScreenRoute.GYM_PROFILE, OwnerScreenRoute.GYM_LOCATION ->
-                            OwnerGymScreen(initialTab = gymTabFor(route) ?: GymTab.PROFILE)
+                        OwnerScreenRoute.GYM_PROFILE -> OwnerGymScreen()
                         OwnerScreenRoute.STAFF -> OwnerStaffScreen()
                         OwnerScreenRoute.ACTIVITY_LOG -> OwnerActivityLogScreen()
                         OwnerScreenRoute.NOTIFICATIONS -> OwnerNotificationsScreen()
@@ -158,8 +152,12 @@ fun GymOwnerMainScreen(
                         .align(Alignment.CenterStart)
                         .clickable(enabled = false) {}
                 ) {
+                    // Badge counts are read when the drawer opens, from the same data the screens show
                     OwnerNavigationDrawerSheet(
                         currentScreenName = currentRoute.title,
+                        todayCheckIns = GymOwnerRepository.getTodayCheckInCount(),
+                        upcomingBookings = GymOwnerRepository.getUpcomingBookingCount(),
+                        unreadNotifications = GymOwnerRepository.getUnreadNotificationCount(),
                         onNavigate = { title ->
                             val match = OwnerScreenRoute.values().firstOrNull { it.title == title }
                             if (match != null) {
