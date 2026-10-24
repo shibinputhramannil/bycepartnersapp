@@ -267,6 +267,7 @@ fun OwnerDashboardScreen(
                 actionLabel = "Live Attendance",
                 onActionClick = onNavigateToAttendance
             )
+            DemoDataNotice(text = "Demo data—not live: sample figures for today.")
             Spacer(modifier = Modifier.height(8.dp))
 
             LiquidGlassCard(
@@ -334,8 +335,11 @@ fun OwnerDashboardScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         // ----------------------------------------------------
-        // KPI METRIC CARDS (2x2 Grid)
+        // KPI METRIC CARDS (2x2 Grid) - sample values until a backend exists
         // ----------------------------------------------------
+        DemoDataNotice(text = "Demo data—not live: sample KPI figures.")
+        Spacer(modifier = Modifier.height(10.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(14.dp)
@@ -381,8 +385,11 @@ fun OwnerDashboardScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         // ----------------------------------------------------
-        // FEATURE 11: GYM CAPACITY & LIVE OCCUPANCY
+        // FEATURE 11: GYM CAPACITY & OCCUPANCY (sample values)
         // ----------------------------------------------------
+        DemoDataNotice(text = "Demo data—not live: sample occupancy figures.")
+        Spacer(modifier = Modifier.height(10.dp))
+
         LiquidGlassCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp)
@@ -586,6 +593,7 @@ fun OwnerDashboardScreen(
             actionLabel = "Detailed Report",
             onActionClick = onNavigateToPayments
         )
+        DemoDataNotice(text = "Demo data—not live: sample revenue chart.")
         Spacer(modifier = Modifier.height(8.dp))
 
         LiquidGlassCard(
@@ -683,6 +691,7 @@ fun OwnerDashboardScreen(
             actionLabel = "All Memberships",
             onActionClick = onNavigateToMemberships
         )
+        DemoDataNotice(text = "Demo data—not live: sample membership counts.")
         Spacer(modifier = Modifier.height(8.dp))
 
         LiquidGlassCard(

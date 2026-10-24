@@ -69,10 +69,20 @@ class AggregatorScopeUiTest {
   }
 
   @Test
-  fun dashboard_payment_sections_are_labelled_as_demo_data() {
+  fun dashboard_sample_figures_are_labelled_as_demo_data() {
     composeTestRule.setContent { MyApplicationTheme { OwnerDashboardScreen() } }
+    // Each sample section is present, and carries its own notice
+    composeTestRule.onNodeWithText("TOTAL CUSTOMERS").assertExists() // KPI card titles are upper-cased
+    composeTestRule.onNodeWithText("CURRENT GYM OCCUPANCY").assertExists()
+    composeTestRule.onNodeWithText("Revenue Overview").assertExists()
     composeTestRule.onNodeWithText("Pending Payments & Dues").assertExists()
     composeTestRule.onNodeWithText("Recent Payments").assertExists()
+
+    composeTestRule.onNodeWithText("Demo data—not live: sample figures for today.").assertExists()
+    composeTestRule.onNodeWithText("Demo data—not live: sample KPI figures.").assertExists()
+    composeTestRule.onNodeWithText("Demo data—not live: sample occupancy figures.").assertExists()
+    composeTestRule.onNodeWithText("Demo data—not live: sample revenue chart.").assertExists()
+    composeTestRule.onNodeWithText("Demo data—not live: sample membership counts.").assertExists()
     composeTestRule.onAllNodesWithText("Demo data, not live BYCE payments.").assertCountEquals(2)
   }
 

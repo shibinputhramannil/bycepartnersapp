@@ -2,37 +2,42 @@
 
 Android app for BYCE partner gyms: owners, managers and front-desk staff use it to run day-to-day centre operations. It is written in Kotlin with Jetpack Compose.
 
-> **Status: UI prototype.** Every screen reads from `GymOwnerRepository`, an in-memory object with sample data. There is no backend, login, or persistence yet; all changes are lost when the app restarts. Several integrations shown in the UI (reminders, exports, payments) are simulated.
+BYCE is an aggregator: BYCE owns pass tiers, pricing, member payments, pass pausing and gym listings. This app covers what happens at the gym (check-ins, attendance, bookings, members, staff and sessions) and shows BYCE-owned information read-only.
+
+> **Status: UI prototype with sample data.** Every screen reads from `GymOwnerRepository`, an in-memory object filled with sample data. There is no backend, real login, or persistence yet, so **every change resets when the app restarts**. Dashboard figures and payment views are labelled "Demo data—not live" in the app. Login is not real: any phone number with a password of 6 or more characters gets in.
 
 ## Features
 
-| Area | What the owner portal covers |
+| Area | What the app covers |
 |---|---|
-| Dashboard | Today's check-ins, bookings, members inside, expiring memberships, pending dues |
-| Attendance | Check-in list, manual check-in/out, manual override with reason, first-time trial arrival alert |
-| QR scanner | CameraX + ML Kit barcode/QR scanning for member check-in |
-| Members | Member list, add member, CRM notes, activity timeline |
-| Memberships & plans | Membership list, expiring soon, freeze/defer, plan management |
-| Bookings | Slot bookings, mark arrived, cancel, reminder email via the Gmail app |
-| Payments | Payment ledger, pending dues, POS invoices |
-| Gym | Gym profile, opening hours, check-in QR |
-| Staff | Staff roster, class sessions |
-| Other | Reports, activity log, notifications, settings |
+| Dashboard | Today's operations, KPIs, occupancy, revenue chart, expiring memberships, recent activity. Sample figures are labelled "Demo data—not live". |
+| Check-in | QR/barcode scanning (CameraX + ML Kit), manual check-in (existing members only), manual override with a logged reason, first-time trial arrival alert |
+| Check-in rules | Active passes check in; expired or pending passes need a logged reason; frozen passes are blocked unless staff override with a reason; unknown members, unrecognized statuses, cancelled bookings and duplicates are always blocked |
+| Attendance | Today's check-ins, members currently inside, completed visits, check-out |
+| Members | Member list, add member, CRM notes, activity timeline, last check-in |
+| Memberships | Membership list and status, expiring soon. Pausing is handled by BYCE; the app only shows whether a pass is paused. |
+| Accepted Passes | Read-only list of the BYCE passes that give entry at this gym. Tiers and pricing are managed by BYCE. |
+| Bookings | Slot bookings, mark arrived (same check-in rules), cancel, open a Gmail draft to remind a member |
+| Payments | Read-only view of member payments and pending dues, labelled as demo data. Members pay BYCE; there is no POS, payment collection, or "record paid" in this app. |
+| Gym | Gym profile, opening hours and open/closed status, read-only BYCE listing status, location details, check-in QR |
+| Staff | Staff roster, class sessions, assign a substitute coach |
+| Other | Activity log, notifications, settings |
 
-Member-facing screens are not part of this app. The earlier prototype versions are preserved on the `member-app` branch.
+**Not available yet** (shown in the app as "Not available yet"): file exports, QR print/download, SMS/WhatsApp and renewal reminders, password change, and a map view.
+
+Member-facing screens and the Flutter map demo are not part of this app. Earlier versions are preserved on the `member-app` and `flutter-map-demo` branches.
 
 ## Project structure
 
 ```
 app/src/main/java/com/example/
-├── MainActivity.kt          # Entry point and top-level screen switching
+├── MainActivity.kt          # Entry point: login screen and owner portal
 ├── data/
-│   ├── models/ByceModels.kt # Data models
-│   └── services/GymOwnerRepository.kt  # In-memory sample data (no backend yet)
+│   ├── models/ByceModels.kt # Data models, member statuses, check-in rule types
+│   └── services/GymOwnerRepository.kt  # In-memory sample data and check-in rules (no backend yet)
 └── ui/
-    ├── owner/               # Partner/owner portal screens
+    ├── owner/               # Partner portal screens
     ├── auth/                # Login / sign-up UI (not connected to a backend)
-    ├── onboarding/          # Onboarding pager (currently unreachable)
     ├── components/          # Shared Compose components
     └── theme/               # Colours, typography, theme
 ```
@@ -73,12 +78,22 @@ Never commit keystores or passwords.
 
 ## Tests
 
-| Test | Type |
+Unit tests run on the JVM; the UI tests use Robolectric and need no device.
+
+| Test | Covers |
 |---|---|
-| `app/src/test/.../ExampleUnitTest.kt` | JVM unit test (template) |
-| `app/src/test/.../ExampleRobolectricTest.kt` | Robolectric resource test |
-| `app/src/test/.../GreetingScreenshotTest.kt` | Roborazzi screenshot of the onboarding screen |
+| `CheckInRulesTest` | Check-in rules for each member status, bookings, overrides and duplicates |
+| `ScannerPayloadTest` | Scanned codes only match real members or bookings |
+| `AggregatorScopeTest`, `AggregatorScopeUiTest` | Accepted passes, read-only payments and listing status, demo-data labels, no freeze/POS tools |
+| `PartnerScopeTest`, `PartnerCleanupUiTest` | Menu routes and badges, removed prototype features stay removed |
+| `ListRefreshUiTest` | Customer list updates after adding a member |
+| `ChartSafetyTest` | Charts handle zero and empty values |
+| `GymTabRoutingTest`, `AssignCoachTest` | Gym tabs; substitute coach selection |
+| `OwnerDashboardScreenshotTest` | Renders the owner dashboard |
+| `ExampleUnitTest`, `ExampleRobolectricTest` | Template tests |
 | `app/src/androidTest/.../ExampleInstrumentedTest.kt` | Instrumented test (needs a device or emulator) |
+
+Camera scanning, the flip-camera and torch buttons, and the screens' appearance have not been verified on a device.
 
 ## Before release
 
@@ -86,6 +101,6 @@ These still need to be done before the app can ship:
 
 - Final application ID (currently `com.aistudio.bycepartner.kxmpzq`; it cannot be changed after the first Play Store upload)
 - Real authentication with staff roles
-- Backend API and local persistence in place of the sample repository
+- Backend API and local persistence in place of the sample repository, then remove the demo-data labels
 - Turn off cleartext traffic and configure backup rules
 - Enable minification and remove unused dependencies
