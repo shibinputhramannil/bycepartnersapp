@@ -1253,7 +1253,7 @@ private fun DailyVisitsAnalyticsModal(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    val maxVal = graphData.maxOfOrNull { it.second } ?: 1
+                    val maxVal = graphData.maxOfOrNull { it.second } ?: 0
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1262,7 +1262,7 @@ private fun DailyVisitsAnalyticsModal(
                         verticalAlignment = Alignment.Bottom
                     ) {
                         graphData.forEach { point ->
-                            val ratio = (point.second.toFloat() / maxVal).coerceIn(0.12f, 1f)
+                            val ratio = chartBarRatio(point.second.toDouble(), maxVal.toDouble(), minRatio = 0.12f)
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Bottom,

@@ -33,6 +33,15 @@ import com.example.data.services.GymOwnerRepository
 import com.example.ui.components.*
 import com.example.ui.theme.*
 
+// Modifier.weight() throws for 0 or NaN, so zero-count segments are dropped.
+// Raw counts are used as weights; Compose does not need them to sum to 1.
+internal fun <T> nonZeroSegments(segments: List<Pair<Int, T>>): List<Pair<Float, T>> =
+    segments.filter { it.first > 0 }.map { it.first.toFloat() to it.second }
+
+// Bar height as a fraction of the tallest bar; safe when every value is 0
+internal fun chartBarRatio(value: Double, max: Double, minRatio: Float): Float =
+    if (max <= 0.0 || value.isNaN()) minRatio else (value / max).toFloat().coerceIn(minRatio, 1f)
+
 @Composable
 fun OwnerDashboardScreen(
     onNavigateToCustomers: () -> Unit = {},
@@ -617,7 +626,7 @@ fun OwnerDashboardScreen(
                 Spacer(modifier = Modifier.height(18.dp))
 
                 // Bar Chart Visualizer
-                val maxAmount = revenueData.maxOfOrNull { it.amount } ?: 1.0
+                val maxAmount = revenueData.maxOfOrNull { it.amount } ?: 0.0
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -627,7 +636,7 @@ fun OwnerDashboardScreen(
                     verticalAlignment = Alignment.Bottom
                 ) {
                     revenueData.forEach { point ->
-                        val barRatio = (point.amount / maxAmount).toFloat().coerceIn(0.1f, 1.0f)
+                        val barRatio = chartBarRatio(point.amount, maxAmount, minRatio = 0.1f)
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Bottom,
@@ -698,18 +707,25 @@ fun OwnerDashboardScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Distribution Bar
-                val total = (membershipOverview.active + membershipOverview.pending + membershipOverview.expired + membershipOverview.cancelled).toFloat()
+                // Distribution Bar (an empty track when every count is 0)
+                val segments = nonZeroSegments(
+                    listOf(
+                        membershipOverview.active to StatusActiveGreen,
+                        membershipOverview.pending to StatusPendingAmber,
+                        membershipOverview.expired to StatusExpiredRed,
+                        membershipOverview.cancelled to StatusCancelledGray
+                    )
+                )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(10.dp)
                         .clip(RoundedCornerShape(5.dp))
+                        .background(Color(0x20FFFFFF))
                 ) {
-                    Box(modifier = Modifier.weight(membershipOverview.active / total).fillMaxHeight().background(StatusActiveGreen))
-                    Box(modifier = Modifier.weight(membershipOverview.pending / total).fillMaxHeight().background(StatusPendingAmber))
-                    Box(modifier = Modifier.weight(membershipOverview.expired / total).fillMaxHeight().background(StatusExpiredRed))
-                    Box(modifier = Modifier.weight(membershipOverview.cancelled / total).fillMaxHeight().background(StatusCancelledGray))
+                    segments.forEach { (weight, color) ->
+                        Box(modifier = Modifier.weight(weight).fillMaxHeight().background(color))
+                    }
                 }
             }
         }

@@ -60,7 +60,9 @@ fun OwnerPaymentsScreen(
         }
     }
 
-    val filteredPendingPayments = remember(searchQuery, selectedStatusFilter, allPendingPayments) {
+    // The repository returns the same list objects each time, so refreshTrigger must be
+    // a key here or these never recompute after Record Paid / new POS invoice
+    val filteredPendingPayments = remember(searchQuery, selectedStatusFilter, allPendingPayments, refreshTrigger) {
         allPendingPayments.filter { pending ->
             pending.customerName.contains(searchQuery, ignoreCase = true) ||
                     pending.membershipPlan.contains(searchQuery, ignoreCase = true) ||
@@ -68,7 +70,7 @@ fun OwnerPaymentsScreen(
         }
     }
 
-    val filteredPosInvoices = remember(searchQuery, allPosInvoices) {
+    val filteredPosInvoices = remember(searchQuery, allPosInvoices, refreshTrigger) {
         allPosInvoices.filter { inv ->
             inv.customerName.contains(searchQuery, ignoreCase = true) ||
                     inv.invoiceNumber.contains(searchQuery, ignoreCase = true) ||
@@ -77,7 +79,7 @@ fun OwnerPaymentsScreen(
         }
     }
 
-    val totalPendingAmount = remember(allPendingPayments) {
+    val totalPendingAmount = remember(allPendingPayments, refreshTrigger) {
         allPendingPayments.sumOf { it.amount }
     }
 

@@ -45,6 +45,13 @@ enum class OwnerScreenRoute(val title: String) {
     SETTINGS("Settings")
 }
 
+// Which Gym screen tab a drawer route opens; null for non-Gym routes
+internal fun gymTabFor(route: OwnerScreenRoute): GymTab? = when (route) {
+    OwnerScreenRoute.GYM_PROFILE -> GymTab.PROFILE
+    OwnerScreenRoute.GYM_LOCATION -> GymTab.LOCATION
+    else -> null
+}
+
 @Composable
 fun GymOwnerMainScreen(
     onLogout: () -> Unit = {},
@@ -115,8 +122,8 @@ fun GymOwnerMainScreen(
                         OwnerScreenRoute.PLANS -> OwnerPlansScreen()
                         OwnerScreenRoute.PAYMENTS -> OwnerPaymentsScreen()
                         OwnerScreenRoute.BOOKINGS -> OwnerBookingsScreen()
-                        OwnerScreenRoute.GYM_PROFILE -> OwnerGymScreen(initialTab = "Profile")
-                        OwnerScreenRoute.GYM_LOCATION -> OwnerGymScreen(initialTab = "Location")
+                        OwnerScreenRoute.GYM_PROFILE, OwnerScreenRoute.GYM_LOCATION ->
+                            OwnerGymScreen(initialTab = gymTabFor(route) ?: GymTab.PROFILE)
                         OwnerScreenRoute.STAFF -> OwnerStaffScreen()
                         OwnerScreenRoute.REPORTS -> OwnerReportsScreen()
                         OwnerScreenRoute.ACTIVITY_LOG -> OwnerActivityLogScreen()

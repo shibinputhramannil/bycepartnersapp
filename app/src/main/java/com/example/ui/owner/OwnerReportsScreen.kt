@@ -294,7 +294,7 @@ private fun AnalyticsChartCard(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            val maxVal = dataPoints.maxOfOrNull { it.second } ?: 1.0
+            val maxVal = dataPoints.maxOfOrNull { it.second } ?: 0.0
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -303,7 +303,7 @@ private fun AnalyticsChartCard(
                 verticalAlignment = Alignment.Bottom
             ) {
                 dataPoints.forEach { point ->
-                    val ratio = (point.second / maxVal).toFloat().coerceIn(0.15f, 1.0f)
+                    val ratio = chartBarRatio(point.second, maxVal, minRatio = 0.15f)
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Bottom,

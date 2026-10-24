@@ -30,9 +30,15 @@ import com.example.data.services.GymOwnerRepository
 import com.example.ui.components.*
 import com.example.ui.theme.*
 
+enum class GymTab(val label: String) {
+    PROFILE("Profile"),
+    LOCATION("Location & Map"),
+    CHECK_IN_QR("Check-in QR")
+}
+
 @Composable
 fun OwnerGymScreen(
-    initialTab: String = "Profile",
+    initialTab: GymTab = GymTab.PROFILE,
     modifier: Modifier = Modifier
 ) {
     var activeSubTab by remember { mutableStateOf(initialTab) }
@@ -96,7 +102,7 @@ fun OwnerGymScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            listOf("Profile", "Location & Map", "Check-in QR").forEach { tab ->
+            GymTab.entries.forEach { tab ->
                 val isSelected = activeSubTab == tab
                 Box(
                     modifier = Modifier
@@ -108,7 +114,7 @@ fun OwnerGymScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = tab,
+                        text = tab.label,
                         fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         color = if (isSelected) TextWhite else TextMuted
@@ -119,7 +125,7 @@ fun OwnerGymScreen(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        if (activeSubTab == "Profile") {
+        if (activeSubTab == GymTab.PROFILE) {
             // ----------------------------------------------------
             // FEATURE 12 & 15: GYM OPERATING STATUS & VISIBILITY
             // ----------------------------------------------------
@@ -369,7 +375,7 @@ fun OwnerGymScreen(
                     Text(text = "${gymProfile.address}\n${gymProfile.city}, ${gymProfile.district}\n${gymProfile.state} - ${gymProfile.pincode}", fontSize = 13.sp, color = TextWhite, lineHeight = 19.sp)
                 }
             }
-        } else if (activeSubTab == "Location & Map") {
+        } else if (activeSubTab == GymTab.LOCATION) {
             // Gym Location & Map View with BYCE Kettlebell Pin Logo
             var isSatelliteMode by remember { mutableStateOf(false) }
             var zoomLevel by remember { mutableStateOf(16) }
