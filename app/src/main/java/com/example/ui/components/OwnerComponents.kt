@@ -631,7 +631,6 @@ fun OwnerNavigationDrawerSheet(
         OwnerNavItem("Gym Profile", Icons.Default.FitnessCenter),
         OwnerNavItem("Gym Location", Icons.Default.PinDrop),
         OwnerNavItem("Staff", Icons.Default.Badge),
-        OwnerNavItem("Reports", Icons.Default.BarChart),
         OwnerNavItem("Activity Log", Icons.Default.History),
         OwnerNavItem("Notifications", Icons.Default.Notifications, badge = "2"),
         OwnerNavItem("Settings", Icons.Default.Settings)

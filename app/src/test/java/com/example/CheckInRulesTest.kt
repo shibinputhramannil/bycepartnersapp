@@ -112,14 +112,14 @@ class CheckInRulesTest {
     )
     assertEquals(CheckInEligibility.BLOCKED, repo.evaluateMemberCheckIn("t_status").eligibility)
     assertTrue(repo.checkIn(customerId = "t_status", reason = "Manager approved", source = "test") is CheckInOutcome.Rejected)
-    assertTrue(repo.performAttendanceOverride("t_status", "Turnstile Hardware Breakdown") is CheckInOutcome.Rejected)
+    assertTrue(repo.performAttendanceOverride("t_status", "QR Scanner Not Working") is CheckInOutcome.Rejected)
   }
 
   @Test
   fun hardware_override_still_requires_a_real_member_and_blocks_duplicates() {
-    assertTrue(repo.performAttendanceOverride("not-a-member", "Turnstile Hardware Breakdown") is CheckInOutcome.Rejected)
+    assertTrue(repo.performAttendanceOverride("not-a-member", "QR Scanner Not Working") is CheckInOutcome.Rejected)
     // c2 Ananya Nair is already checked in today
-    assertTrue(repo.performAttendanceOverride("c2", "Turnstile Hardware Breakdown") is CheckInOutcome.Rejected)
+    assertTrue(repo.performAttendanceOverride("c2", "QR Scanner Not Working") is CheckInOutcome.Rejected)
   }
 
   @Test

@@ -547,8 +547,9 @@ private fun CustomerDetailDialog(
                             letterSpacing = 0.5.sp
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+                        val lastVisit = remember(customer.id) { GymOwnerRepository.getLastCheckIn(customer.id) }
                         Text(
-                            text = "Last checked in: Yesterday, 07:15 AM · Iron House Gym",
+                            text = lastVisit?.let { "Last checked in: ${it.date}, ${it.checkInTime}" } ?: "No check-ins recorded yet",
                             fontSize = 12.sp,
                             color = TextWhite
                         )
@@ -643,6 +644,10 @@ private fun CustomerDetailDialog(
                             letterSpacing = 0.5.sp
                         )
                         Spacer(modifier = Modifier.height(10.dp))
+
+                        if (activities.isEmpty()) {
+                            Text(text = "No activity recorded yet for this customer.", fontSize = 12.sp, color = TextMuted)
+                        }
 
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             activities.forEach { act ->

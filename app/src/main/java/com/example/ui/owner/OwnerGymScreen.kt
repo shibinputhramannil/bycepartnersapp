@@ -376,10 +376,7 @@ fun OwnerGymScreen(
                 }
             }
         } else if (activeSubTab == GymTab.LOCATION) {
-            // Gym Location & Map View with BYCE Kettlebell Pin Logo
-            var isSatelliteMode by remember { mutableStateOf(false) }
-            var zoomLevel by remember { mutableStateOf(16) }
-
+            // Gym location details from the profile (no live map yet)
             LiquidGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(22.dp)
@@ -389,14 +386,27 @@ fun OwnerGymScreen(
                         .fillMaxWidth()
                         .padding(20.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF161415))
+                                .padding(4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.byce_kettlebell_pin),
+                                contentDescription = "BYCE Center Pin",
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "BYCE DISCOVERY GEO-LOCATION",
+                                text = "GYM LOCATION",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TextSubtle,
@@ -404,167 +414,16 @@ fun OwnerGymScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Live Map & Positioning",
+                                text = "Coordinates & Address",
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TextWhite
                             )
                         }
-
-                        // Satellite toggle pill
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSatelliteMode) StatusActiveGreenBg else Color(0x20FFFFFF))
-                                .clickable { isSatelliteMode = !isSatelliteMode }
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = if (isSatelliteMode) "Satellite" else "Dark Map",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isSatelliteMode) StatusActiveGreen else TextWhite
-                            )
-                        }
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Map View Container with BYCE Kettlebell Pin Logo inside
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp)
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(
-                                if (isSatelliteMode) {
-                                    Brush.verticalGradient(listOf(Color(0xFF0F261C), Color(0xFF0A1812)))
-                                } else {
-                                    Brush.verticalGradient(listOf(Color(0xFF141F1A), Color(0xFF0D1411)))
-                                }
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Simulated Map Grid Lines & Roads
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            repeat(6) {
-                                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x0CFFFFFF)))
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            repeat(4) {
-                                Box(modifier = Modifier.fillMaxHeight().width(1.dp).background(Color(0x0CFFFFFF)))
-                            }
-                        }
-
-                        // Glowing Radar Pulse Circles around Logo Pin
-                        Box(
-                            modifier = Modifier
-                                .size(140.dp)
-                                .clip(CircleShape)
-                                .background(NeonGreen.copy(alpha = 0.08f))
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(90.dp)
-                                .clip(CircleShape)
-                                .background(NeonGreen.copy(alpha = 0.15f))
-                        )
-
-                        // Center Map Pin with authentic BYCE Kettlebell Logo
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(62.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF161415))
-                                    .padding(4.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.byce_kettlebell_pin),
-                                    contentDescription = "BYCE Center Pin",
-                                    modifier = Modifier
-                                        .size(54.dp)
-                                        .clip(CircleShape)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0xE0161415))
-                                    .padding(horizontal = 10.dp, vertical = 5.dp)
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(NeonGreen))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Iron House Fitness · Verified",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = TextWhite
-                                    )
-                                }
-                            }
-                        }
-
-                        // Map Control Floating Overlay (Zoom in / out)
-                        Column(
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0x90000000))
-                                    .clickable { zoomLevel = (zoomLevel + 1).coerceAtMost(20) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = "Zoom In", tint = TextWhite, modifier = Modifier.size(16.dp))
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0x90000000))
-                                    .clickable { zoomLevel = (zoomLevel - 1).coerceAtLeast(10) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Remove, contentDescription = "Zoom Out", tint = TextWhite, modifier = Modifier.size(16.dp))
-                            }
-                        }
-
-                        // Top Left GPS & Accuracy Tag
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .padding(12.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0x80000000))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "GPS Accuracy: ±2m (Zoom: ${zoomLevel}x)",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NeonGreen
-                            )
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = "Map view: Not available yet", fontSize = 11.sp, color = TextMuted)
 
                     Spacer(modifier = Modifier.height(16.dp))
 

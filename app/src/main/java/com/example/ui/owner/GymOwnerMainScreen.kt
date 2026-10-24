@@ -39,7 +39,6 @@ enum class OwnerScreenRoute(val title: String) {
     GYM_PROFILE("Gym Profile"),
     GYM_LOCATION("Gym Location"),
     STAFF("Staff"),
-    REPORTS("Reports"),
     ACTIVITY_LOG("Activity Log"),
     NOTIFICATIONS("Notifications"),
     SETTINGS("Settings")
@@ -125,7 +124,6 @@ fun GymOwnerMainScreen(
                         OwnerScreenRoute.GYM_PROFILE, OwnerScreenRoute.GYM_LOCATION ->
                             OwnerGymScreen(initialTab = gymTabFor(route) ?: GymTab.PROFILE)
                         OwnerScreenRoute.STAFF -> OwnerStaffScreen()
-                        OwnerScreenRoute.REPORTS -> OwnerReportsScreen()
                         OwnerScreenRoute.ACTIVITY_LOG -> OwnerActivityLogScreen()
                         OwnerScreenRoute.NOTIFICATIONS -> OwnerNotificationsScreen()
                         OwnerScreenRoute.SETTINGS -> OwnerSettingsScreen(onLogoutClick = onLogout)

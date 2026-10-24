@@ -170,14 +170,6 @@ object GymOwnerRepository {
         )
     )
 
-    private val sampleTrialSessions = mutableListOf(
-        FreeTrialSession("tr_1", "Iron House Fitness", "Boxing & Cardio Kick", "Coach Vicky", "Tomorrow", "07:00 AM - 08:00 AM", "High", 1, "Available"),
-        FreeTrialSession("tr_2", "Iron House Fitness", "Strength & Conditioning", "Coach Ramesh", "Tomorrow", "06:00 PM - 07:00 PM", "High", 1, "Available"),
-        FreeTrialSession("tr_3", "Iron House Fitness", "Dance Fitness / Zumba", "Coach Anjali", "Friday", "05:30 PM - 06:30 PM", "Medium", 1, "Available"),
-        FreeTrialSession("tr_4", "Iron House Fitness", "Power Yoga & Flow", "Coach Priya", "Saturday", "08:00 AM - 09:00 AM", "Low", 1, "Available")
-    )
-    private var freeTrialCredits = 2
-
     private val sampleCustomers = mutableListOf(
         CustomerItem("c1", "Rahul Menon", "rahul.menon@gmail.com", "+91 98471 22334", "Yearly", "10 Jan 2026", "09 Jan 2027", "Active", "10 Jan 2025", "RM"),
         CustomerItem("c2", "Ananya Nair", "ananya.nair@outlook.com", "+91 97455 33445", "Monthly", "01 Sep 2026", "30 Sep 2026", "Active", "15 Jun 2026", "AN"),
@@ -427,52 +419,6 @@ object GymOwnerRepository {
         }
     }
 
-    // Free Trial Sessions Engine (2 Free Trial Credits)
-    fun getTrialSessions(): List<FreeTrialSession> = sampleTrialSessions
-
-    fun getFreeTrialCredits(): Int = freeTrialCredits
-
-    fun bookTrialSession(sessionId: String): Boolean {
-        val index = sampleTrialSessions.indexOfFirst { it.id == sessionId }
-        if (index != -1 && freeTrialCredits > 0) {
-            val session = sampleTrialSessions[index]
-            sampleTrialSessions[index] = session.copy(status = "Booked")
-            freeTrialCredits = (freeTrialCredits - 1).coerceAtLeast(0)
-
-            val newBooking = BookingItem(
-                id = "trial_${System.currentTimeMillis()}",
-                customerName = "Trial Member (Alex)",
-                customerPhone = "+91 98470 99887",
-                customerEmail = "alex.member@cultgym.com",
-                membershipPlan = "2-Session Free Trial (${session.sessionType})",
-                date = session.date,
-                time = session.timeSlot,
-                shift = if (session.timeSlot.contains("AM")) "Morning Shift" else "Evening Shift",
-                status = "Upcoming",
-                arrivalStatus = "Confirmed",
-                reminderMinutesBefore = 30,
-                reminderScheduled = true,
-                reminderDeliveryChannel = "Gmail",
-                reminderStatus = "Not sent"
-            )
-            sampleBookings.add(0, newBooking)
-
-            logAdminAction("System Engine", "Booked Free Trial session '${session.sessionType}' at ${session.timeSlot}. Credits remaining: $freeTrialCredits", "Bookings")
-            addNotification(
-                NotificationItem(
-                    id = "notif_trial_${System.currentTimeMillis()}",
-                    title = "Free Trial Session Confirmed",
-                    message = "Your ${session.sessionType} trial session is booked for ${session.date} (${session.timeSlot}). Dynamic check-in QR code is ready.",
-                    type = "Booking",
-                    timestamp = "Just now",
-                    isRead = false
-                )
-            )
-            return true
-        }
-        return false
-    }
-
     private val sampleFreezes = mutableListOf(
         MembershipFreezeRecord(
             id = "frz_1",
@@ -517,7 +463,7 @@ object GymOwnerRepository {
         reason: String,
         staffName: String = "Kishore Kumar (Owner)"
     ): CheckInOutcome {
-        val outcome = checkIn(customerId = customerId, reason = reason, source = "hardware override", staffName = staffName)
+        val outcome = checkIn(customerId = customerId, reason = reason, source = "manual override", staffName = staffName)
         if (outcome is CheckInOutcome.Success) {
             val visit = outcome.record
             val record = AttendanceOverrideRecord(
@@ -527,7 +473,7 @@ object GymOwnerRepository {
                 membershipPlan = visit.membershipPlan,
                 reason = reason,
                 overrideStaff = staffName,
-                originalStatus = "Hardware Bypass",
+                originalStatus = "Manual Override",
                 updatedStatus = "Attended",
                 timestamp = "Just now"
             )
@@ -537,7 +483,7 @@ object GymOwnerRepository {
                 NotificationItem(
                     id = "notif_ovr_${System.currentTimeMillis()}",
                     title = "Manual Override Check-In",
-                    message = "Forced check-in status to 'Attended' for ${visit.customerName}. Hardware bypass reason: $reason",
+                    message = "Forced check-in status to 'Attended' for ${visit.customerName}. Reason: $reason",
                     type = "Booking",
                     timestamp = "Just now",
                     isRead = false
@@ -624,7 +570,7 @@ object GymOwnerRepository {
     }
 
     // ----------------------------------------------------
-    // 5. TRIAL CHECK-IN AUDIO BUZZER ALERT
+    // 5. FIRST-TIME TRIAL ARRIVAL ALERT (visual only)
     // ----------------------------------------------------
     private var activeTrialAlert: TrialCheckInBuzzerAlert? = TrialCheckInBuzzerAlert(
         id = "alert_trial_01",
@@ -633,7 +579,7 @@ object GymOwnerRepository {
         sessionType = "Boxing & Cardio Kick",
         trialPassType = "2-Session Free Trial",
         centerName = "Iron House Fitness",
-        arrivalTime = "Just now (Turnstile #1)",
+        arrivalTime = "Just now (Front desk)",
         isFirstTimeTrialist = true,
         isAudioAlertPlaying = true,
         isAcknowledged = false
@@ -836,6 +782,10 @@ object GymOwnerRepository {
     )
 
     fun getAttendanceRecords(): List<AttendanceItem> = sampleAttendance
+
+    // Attendance is stored newest first
+    fun getLastCheckIn(customerId: String): AttendanceItem? =
+        sampleAttendance.firstOrNull { it.customerId == customerId }
 
     fun getAttendanceSummary(): AttendanceSummary = AttendanceSummary(
         todayCheckins = 86,
@@ -1080,12 +1030,9 @@ object GymOwnerRepository {
         )
     )
 
+    // Members without recorded events get an empty timeline, not invented history
     fun getCustomerActivityTimeline(customerId: String): List<CustomerActivityEvent> {
-        return sampleCustomerActivities[customerId] ?: listOf(
-            CustomerActivityEvent("def1", customerId, "Gym Check-in", "Attendance logged via BYCE check-in", "22 Sep", "11:00 AM", "CheckIn"),
-            CustomerActivityEvent("def2", customerId, "Payment Received", "Membership transaction settled", "15 Sep", "02:15 PM", "Payment"),
-            CustomerActivityEvent("def3", customerId, "Membership Joined", "Registered on BYCE platform", "01 Aug", "10:00 AM", "Membership")
-        )
+        return sampleCustomerActivities[customerId] ?: emptyList()
     }
 
     // ----------------------------------------------------
@@ -1106,13 +1053,6 @@ object GymOwnerRepository {
         if (index != -1) {
             val item = samplePendingPayments.removeAt(index)
             logAdminAction(recordedBy, "Recorded manual payment for ${item.customerName} (₹${item.amount.toInt()})", "Payments")
-        }
-    }
-
-    fun sendPaymentReminder(paymentId: String, sender: String = "Kishore Kumar") {
-        val item = samplePendingPayments.find { it.id == paymentId }
-        if (item != null) {
-            logAdminAction(sender, "Sent payment reminder to ${item.customerName} (${item.phoneNumber})", "Payments")
         }
     }
 
@@ -1174,9 +1114,7 @@ object GymOwnerRepository {
         AdminActivityLogItem("log_3", "Kishore Kumar", "Updated Quarterly Membership Plan pricing to ₹3,999", "Plans", "Today, 09:30 AM"),
         AdminActivityLogItem("log_4", "Kavya Sreedharan", "Added CRM note for Ananya Nair", "Customers", "Today, 09:16 AM"),
         AdminActivityLogItem("log_5", "Kishore Kumar", "Verified bank settlement for TXN-984210", "Payments", "Yesterday, 06:45 PM"),
-        AdminActivityLogItem("log_6", "Sanjay Nambiar", "Changed operating status to OPEN", "Gym Status", "Yesterday, 05:30 AM"),
-        AdminActivityLogItem("log_7", "Kishore Kumar", "Exported monthly revenue report to CSV", "Reports", "22 Sep 2026, 04:20 PM")
-    )
+        AdminActivityLogItem("log_6", "Sanjay Nambiar", "Changed operating status to OPEN", "Gym Status", "Yesterday, 05:30 AM")    )
 
     fun getAdminActivityLogs(): List<AdminActivityLogItem> = sampleActivityLogs
 

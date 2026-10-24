@@ -167,21 +167,6 @@ data class MembershipPlanItem(
 )
 
 /**
- * Free Trial Session Booking Model (2 Free Sessions)
- */
-data class FreeTrialSession(
-    val id: String,
-    val centerName: String,
-    val sessionType: String, // Boxing, Strength, Dance, Yoga
-    val trainerName: String,
-    val date: String,
-    val timeSlot: String,
-    val intensity: String = "High",
-    val creditsDeducted: Int = 1,
-    val status: String = "Booked" // Booked, Completed, Cancelled
-)
-
-/**
  * Membership Pause / Freeze Engine
  */
 data class MembershipFreezeRecord(
@@ -453,7 +438,7 @@ data class AttendanceOverrideRecord(
     val customerId: String,
     val customerName: String,
     val membershipPlan: String,
-    val reason: String, // Turnstile Hardware Failure, Tablet Malfunction, VIP Manual Entry
+    val reason: String, // QR Scanner Not Working, Member Can't Show QR Pass, Manager Approved Entry
     val overrideStaff: String = "Kishore Kumar (Owner)",
     val originalStatus: String = "Not Arrived",
     val updatedStatus: String = "Attended",
@@ -480,7 +465,7 @@ data class GroupWorkoutSession(
 )
 
 /**
- * 5. Full-Screen Incoming-Call Style Trial Buzzer Alert
+ * 5. First-Time Trial Arrival Alert (visual only; no sound or push notification yet)
  */
 data class TrialCheckInBuzzerAlert(
     val id: String,

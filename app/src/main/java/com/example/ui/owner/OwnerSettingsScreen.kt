@@ -36,13 +36,9 @@ fun OwnerSettingsScreen(
     var ownerEmail by remember { mutableStateOf(owner.email) }
     var ownerPhone by remember { mutableStateOf(owner.phone) }
 
-    var selectedSection by remember { mutableStateOf("Account") } // Account, Security, Notifications, Gym Settings
+    var selectedSection by remember { mutableStateOf("Account") } // Account, Security
 
     var showPasswordDialog by remember { mutableStateOf(false) }
-    var notificationsEnabled by remember { mutableStateOf(true) }
-    var emailAlertsEnabled by remember { mutableStateOf(true) }
-    var shiftGmailRemindersEnabled by remember { mutableStateOf(true) }
-    var autoApproveCheckin by remember { mutableStateOf(true) }
 
     val scrollState = rememberScrollState()
 
@@ -68,12 +64,12 @@ fun OwnerSettingsScreen(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Navigation Tabs (Account, Security, Notifications, Gym Settings)
+        // Navigation Tabs (Account, Security)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            listOf("Account", "Security", "Alerts", "Gym").forEach { sec ->
+            listOf("Account", "Security").forEach { sec ->
                 val isSelected = selectedSection == sec
                 Box(
                     modifier = Modifier
@@ -230,93 +226,11 @@ fun OwnerSettingsScreen(
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
                                     Text(text = "Change Password", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextWhite)
-                                    Text(text = "Last updated 30 days ago", fontSize = 11.sp, color = ByceCoolGray)
+                                    Text(text = "Not available yet", fontSize = 11.sp, color = ByceCoolGray)
                                 }
                             }
                             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextMuted)
                         }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(Color(0x18FFFFFF))
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Security, contentDescription = null, tint = TextWhite, modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    Text(text = "Two-Factor Authentication", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextWhite)
-                                    Text(text = "SMS OTP verification active", fontSize = 11.sp, color = ByceCoolGray)
-                                }
-                            }
-                            OwnerStatusBadge(status = "Active")
-                        }
-                    }
-                }
-            }
-            "Alerts" -> {
-                LiquidGlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(22.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
-                        Text(
-                            text = "COMMUNICATION CHANNELS",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextSubtle,
-                            letterSpacing = 0.5.sp
-                        )
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        TogglePreferenceRow("Push Notifications", "Instant alerts for payments and check-ins", notificationsEnabled) {
-                            notificationsEnabled = !notificationsEnabled
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        TogglePreferenceRow("Email Financial Receipts", "Receive daily revenue settlements", emailAlertsEnabled) {
-                            emailAlertsEnabled = !emailAlertsEnabled
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        TogglePreferenceRow("30-Minute Shift Reminders (Gmail)", "Notify members via Gmail 30 mins before Morning, Evening & Night shifts", shiftGmailRemindersEnabled) {
-                            shiftGmailRemindersEnabled = !shiftGmailRemindersEnabled
-                        }
-                    }
-                }
-            }
-            "Gym" -> {
-                LiquidGlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(22.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
-                        Text(
-                            text = "GYM OPERATIONAL RULES",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextSubtle,
-                            letterSpacing = 0.5.sp
-                        )
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        TogglePreferenceRow("Auto-Approve Check-ins", "Allow members instant entry via QR scan", autoApproveCheckin) {
-                            autoApproveCheckin = !autoApproveCheckin
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        TogglePreferenceRow("Allow Guest Passes", "Permit members to book guest passes", true) {}
                     }
                 }
             }
@@ -348,41 +262,6 @@ fun OwnerSettingsScreen(
                 onDismiss = { showPasswordDialog = false }
             )
         }
-    }
-}
-
-@Composable
-private fun TogglePreferenceRow(
-    title: String,
-    subtitle: String,
-    isEnabled: Boolean,
-    onToggle: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(Color(0x18FFFFFF))
-            .clickable { onToggle() }
-            .padding(14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextWhite)
-            Text(text = subtitle, fontSize = 11.sp, color = ByceCoolGray)
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-        Switch(
-            checked = isEnabled,
-            onCheckedChange = { onToggle() },
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = DarkNavy,
-                checkedTrackColor = StatusActiveGreen,
-                uncheckedThumbColor = TextMuted,
-                uncheckedTrackColor = Color(0x30FFFFFF)
-            )
-        )
     }
 }
 
