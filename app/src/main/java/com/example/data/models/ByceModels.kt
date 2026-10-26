@@ -186,7 +186,7 @@ data class PaymentItem(
 )
 
 /**
- * Booking Record with Shift & 30-Minute Gmail Reminder Support
+ * Booking Record with Shift. Staff reminders are derived from date/time by BookingReminderPlanner.
  */
 data class BookingItem(
     val id: String,
@@ -198,23 +198,17 @@ data class BookingItem(
     val time: String,
     val shift: String = "Morning Shift", // "Morning Shift", "Evening Shift", "Night Shift"
     val status: String, // Upcoming, Today, Completed, Cancelled
-    val arrivalStatus: String = "Checked In", // Feature 10: Checked In, Not Arrived, Pending
-    val reminderMinutesBefore: Int = 30, // 30 minutes before gym start
-    val reminderScheduled: Boolean = true,
-    val reminderDeliveryChannel: String = "Gmail",
-    val reminderStatus: String = "Scheduled (30m before shift)" // Scheduled, Sent via Gmail, Delivered, Cancelled
+    val arrivalStatus: String = "Checked In" // Feature 10: Checked In, Not Arrived, Pending
 )
 
 /**
- * Shift Schedule with 30-Minute Reminder Configuration
+ * Shift window with its count of active (not cancelled) bookings
  */
-data class ShiftReminderSchedule(
+data class ShiftSchedule(
     val shiftName: String, // Morning Shift, Evening Shift, Night Shift
     val startTime: String,
     val endTime: String,
-    val reminderTriggerTime: String, // 30 minutes prior to gym start
-    val activeBookingsCount: Int,
-    val channel: String = "Gmail"
+    val activeBookingsCount: Int
 )
 
 /**

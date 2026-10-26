@@ -213,11 +213,7 @@ object GymOwnerRepository {
             time = "06:00 PM - 07:30 PM",
             shift = "Evening Shift",
             status = "Upcoming",
-            arrivalStatus = "Confirmed",
-            reminderMinutesBefore = 30,
-            reminderScheduled = true,
-            reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Not sent"
+            arrivalStatus = "Confirmed"
         ),
         BookingItem(
             id = "b2",
@@ -229,11 +225,7 @@ object GymOwnerRepository {
             time = "08:00 PM - 09:30 PM",
             shift = "Night Shift",
             status = "Upcoming",
-            arrivalStatus = "Confirmed",
-            reminderMinutesBefore = 30,
-            reminderScheduled = true,
-            reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Not sent"
+            arrivalStatus = "Confirmed"
         ),
         BookingItem(
             id = "b3",
@@ -245,11 +237,7 @@ object GymOwnerRepository {
             time = "06:00 AM - 07:30 AM",
             shift = "Morning Shift",
             status = "Completed",
-            arrivalStatus = "Checked In",
-            reminderMinutesBefore = 30,
-            reminderScheduled = true,
-            reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Not sent"
+            arrivalStatus = "Checked In"
         ),
         BookingItem(
             id = "b4",
@@ -261,11 +249,7 @@ object GymOwnerRepository {
             time = "08:00 AM - 09:30 AM",
             shift = "Morning Shift",
             status = "Completed",
-            arrivalStatus = "Checked In",
-            reminderMinutesBefore = 30,
-            reminderScheduled = true,
-            reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Not sent"
+            arrivalStatus = "Checked In"
         ),
         BookingItem(
             id = "b5",
@@ -277,11 +261,7 @@ object GymOwnerRepository {
             time = "06:30 AM - 08:00 AM",
             shift = "Morning Shift",
             status = "Upcoming",
-            arrivalStatus = "Confirmed",
-            reminderMinutesBefore = 30,
-            reminderScheduled = true,
-            reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Not sent"
+            arrivalStatus = "Confirmed"
         ),
         BookingItem(
             id = "b6",
@@ -293,11 +273,7 @@ object GymOwnerRepository {
             time = "08:30 PM - 10:00 PM",
             shift = "Night Shift",
             status = "Cancelled",
-            arrivalStatus = "Not Arrived",
-            reminderMinutesBefore = 30,
-            reminderScheduled = false,
-            reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Cancelled"
+            arrivalStatus = "Not Arrived"
         ),
         // Walk-in day pass with no member profile
         BookingItem(
@@ -310,11 +286,7 @@ object GymOwnerRepository {
             time = "06:30 PM - 08:00 PM",
             shift = "Evening Shift",
             status = "Upcoming",
-            arrivalStatus = "Confirmed",
-            reminderMinutesBefore = 30,
-            reminderScheduled = false,
-            reminderDeliveryChannel = "Gmail",
-            reminderStatus = "Not sent"
+            arrivalStatus = "Confirmed"
         )
     )
 
@@ -525,11 +497,22 @@ object GymOwnerRepository {
     // GET /api/v1/admin/bookings/
     fun getBookings(): List<BookingItem> = sampleBookings
 
+    /**
+     * Called after any booking changes, with the full booking list. MainActivity uses it to keep
+     * this device's staff reminders in step (see BookingReminderScheduler).
+     */
+    var onBookingsChanged: ((List<BookingItem>) -> Unit)? = null
+
+    private fun notifyBookingsChanged() {
+        onBookingsChanged?.invoke(sampleBookings.toList())
+    }
+
     fun cancelBooking(bookingId: String) {
         val index = sampleBookings.indexOfFirst { it.id == bookingId }
         if (index != -1) {
             sampleBookings[index] = sampleBookings[index].copy(status = "Cancelled", arrivalStatus = "Not Arrived")
             logAdminAction("Kishore Kumar", "Cancelled booking $bookingId", "Bookings")
+            notifyBookingsChanged()
         }
     }
 
@@ -542,32 +525,41 @@ object GymOwnerRepository {
         return outcome
     }
 
-    // Shift & 30-Minute Gmail Reminder Engine
-    fun getShiftReminderSchedules(): List<ShiftReminderSchedule> {
+    // Shift windows with active booking counts
+    fun getShiftSchedules(): List<ShiftSchedule> {
         val morningCount = sampleBookings.count { it.shift.contains("Morning", ignoreCase = true) && it.status != "Cancelled" }
         val eveningCount = sampleBookings.count { it.shift.contains("Evening", ignoreCase = true) && it.status != "Cancelled" }
         val nightCount = sampleBookings.count { it.shift.contains("Night", ignoreCase = true) && it.status != "Cancelled" }
 
         return listOf(
-            ShiftReminderSchedule("Morning Shift", "06:00 AM", "10:30 AM", "05:30 AM (30m before start)", morningCount, "Gmail"),
-            ShiftReminderSchedule("Evening Shift", "04:00 PM", "07:30 PM", "03:30 PM (30m before start)", eveningCount, "Gmail"),
-            ShiftReminderSchedule("Night Shift", "08:00 PM", "10:30 PM", "07:30 PM (30m before start)", nightCount, "Gmail")
+            ShiftSchedule("Morning Shift", "06:00 AM", "10:30 AM", morningCount),
+            ShiftSchedule("Evening Shift", "04:00 PM", "07:30 PM", eveningCount),
+            ShiftSchedule("Night Shift", "08:00 PM", "10:30 PM", nightCount)
         )
     }
 
-    fun updateBookingReminderSchedule(bookingId: String, minutesBefore: Int, shift: String) {
+    fun updateBookingShift(bookingId: String, shift: String) {
         val index = sampleBookings.indexOfFirst { it.id == bookingId }
         if (index != -1) {
             val b = sampleBookings[index]
-            sampleBookings[index] = b.copy(
-                shift = shift,
-                reminderMinutesBefore = minutesBefore
-            )
+            sampleBookings[index] = b.copy(shift = shift)
             logAdminAction(
                 "Kishore Kumar",
                 "Moved ${b.customerName}'s booking to $shift",
                 "Bookings"
             )
+            notifyBookingsChanged()
+        }
+    }
+
+    /** Changes a booking's date ("Today", "Tomorrow" or "dd MMM yyyy") and slot window. */
+    fun rescheduleBooking(bookingId: String, date: String, time: String) {
+        val index = sampleBookings.indexOfFirst { it.id == bookingId }
+        if (index != -1) {
+            val b = sampleBookings[index]
+            sampleBookings[index] = b.copy(date = date, time = time)
+            logAdminAction("Kishore Kumar", "Moved ${b.customerName}'s booking to $date, $time", "Bookings")
+            notifyBookingsChanged()
         }
     }
 
@@ -784,6 +776,7 @@ object GymOwnerRepository {
         if (booking != null) {
             val index = sampleBookings.indexOfFirst { it.id == booking.id }
             sampleBookings[index] = booking.copy(arrivalStatus = "Checked In", status = "Completed")
+            notifyBookingsChanged()
         }
         if (check.eligibility != CheckInEligibility.ALLOWED) {
             logAdminAction(

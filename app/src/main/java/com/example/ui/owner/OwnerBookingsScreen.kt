@@ -1,8 +1,13 @@
 package com.example.ui.owner
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,12 +34,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.example.data.models.BookingItem
 import com.example.data.models.CheckInCheck
 import com.example.data.models.CheckInEligibility
 import com.example.data.models.CheckInOutcome
-import com.example.data.models.ShiftReminderSchedule
+import com.example.data.services.BookingReminderPlan
+import com.example.data.services.BookingReminderPlanner
 import com.example.data.services.GymOwnerRepository
+import com.example.data.services.NoReminderReason
+import com.example.notifications.BookingReminderScheduler
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import com.example.ui.components.*
 import com.example.ui.theme.*
 
@@ -51,7 +66,28 @@ fun OwnerBookingsScreen(
     val bookings = remember { mutableStateListOf<BookingItem>().apply { addAll(GymOwnerRepository.getBookings()) } }
     var selectedBookingForDetail by remember { mutableStateOf<BookingItem?>(null) }
     var bookingPendingCheckIn by remember { mutableStateOf<Pair<BookingItem, CheckInCheck>?>(null) }
-    val shiftSchedules = remember(bookings.toList()) { GymOwnerRepository.getShiftReminderSchedules() }
+    val shiftSchedules = remember(bookings.toList()) { GymOwnerRepository.getShiftSchedules() }
+    // Reference time for reminder labels; refreshed whenever bookings change
+    val nowMillis = remember(bookings.toList()) { System.currentTimeMillis() }
+
+    var notificationsAllowed by remember { mutableStateOf(BookingReminderScheduler.canPostNotifications(context)) }
+    var permissionDenied by rememberSaveable { mutableStateOf(false) }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        notificationsAllowed = BookingReminderScheduler.canPostNotifications(context)
+        permissionDenied = !granted
+    }
+    // Picks up changes made in system settings
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        notificationsAllowed = BookingReminderScheduler.canPostNotifications(context)
+    }
+
+    fun enableNotifications() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !permissionDenied) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            openNotificationSettings(context)
+        }
+    }
 
     fun completeArrival(booking: BookingItem, reason: String?) {
         when (val outcome = GymOwnerRepository.markBookingArrived(booking.id, reason)) {
@@ -169,7 +205,7 @@ fun OwnerBookingsScreen(
                 }
 
                 // -------------------------------------------------------------------
-                // 30-MINUTE SHIFT REMINDER ENGINE CARD (GMAIL INTEGRATION)
+                // STAFF REMINDERS ON THIS DEVICE + SHIFT SUMMARY
                 // -------------------------------------------------------------------
                 LiquidGlassCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -190,27 +226,27 @@ fun OwnerBookingsScreen(
                                     modifier = Modifier
                                         .size(34.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFFEA4335).copy(alpha = 0.18f)),
+                                        .background(StatusInfoBlueBg),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Email,
+                                        imageVector = Icons.Default.NotificationsActive,
                                         contentDescription = null,
-                                        tint = Color(0xFFEA4335),
+                                        tint = StatusInfoBlue,
                                         modifier = Modifier.size(17.dp)
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
-                                        text = "SHIFT REMINDERS",
+                                        text = "STAFF REMINDERS",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.ExtraBold,
                                         color = TextSubtle,
                                         letterSpacing = 0.8.sp
                                     )
                                     Text(
-                                        text = "Pre-Session Reminders",
+                                        text = "Alerts on this device",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = TextWhite
@@ -221,20 +257,62 @@ fun OwnerBookingsScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(20.dp))
-                                    .background(Color(0x15FFFFFF))
+                                    .background(if (notificationsAllowed) StatusActiveGreenBg else StatusPendingAmberBg)
                                     .padding(horizontal = 8.dp, vertical = 3.dp)
                             ) {
-                                Text(text = "Manual only", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextMuted)
+                                Text(
+                                    text = if (notificationsAllowed) "On" else "Off",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (notificationsAllowed) StatusActiveGreen else StatusPendingAmber
+                                )
                             }
                         }
 
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "Automatic reminders: Not available yet. Use \"Open Gmail draft\" on a booking to email the member yourself. Suggested time is 30 minutes before the shift starts.",
+                            text = "This phone shows a notification ${BookingReminderPlanner.MINUTES_BEFORE} minutes before each upcoming booking. It's a reminder for staff on this device only; members aren't notified.",
                             fontSize = 11.sp,
                             color = ByceCoolGray,
                             lineHeight = 15.sp
                         )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Bookings are sample data and reset when the app restarts, so reminders only cover these sample bookings for now.",
+                            fontSize = 11.sp,
+                            color = ByceCoolGray,
+                            lineHeight = 15.sp
+                        )
+
+                        if (!notificationsAllowed) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "Notifications are off for BYCE Partner, so reminders won't appear.",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = StatusPendingAmber,
+                                lineHeight = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0x20FFFFFF))
+                                    .clickable { enableNotifications() }
+                                    .padding(horizontal = 12.dp, vertical = 7.dp)
+                            ) {
+                                Text(
+                                    text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !permissionDenied) {
+                                        "Allow notifications"
+                                    } else {
+                                        "Open notification settings"
+                                    },
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextWhite
+                                )
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(12.dp))
 
@@ -247,7 +325,6 @@ fun OwnerBookingsScreen(
                                 title = "Morning",
                                 icon = "🌅",
                                 gymStart = "06:00 AM",
-                                reminderAlert = "05:30 AM",
                                 count = shiftSchedules.firstOrNull { it.shiftName.contains("Morning") }?.activeBookingsCount ?: 0,
                                 accentColor = Color(0xFFF59E0B),
                                 isSelected = selectedShiftFilter == "Morning Shift",
@@ -261,7 +338,6 @@ fun OwnerBookingsScreen(
                                 title = "Evening",
                                 icon = "🌇",
                                 gymStart = "04:00 PM",
-                                reminderAlert = "03:30 PM",
                                 count = shiftSchedules.firstOrNull { it.shiftName.contains("Evening") }?.activeBookingsCount ?: 0,
                                 accentColor = Color(0xFFF97316),
                                 isSelected = selectedShiftFilter == "Evening Shift",
@@ -275,7 +351,6 @@ fun OwnerBookingsScreen(
                                 title = "Night",
                                 icon = "🌙",
                                 gymStart = "08:00 PM",
-                                reminderAlert = "07:30 PM",
                                 count = shiftSchedules.firstOrNull { it.shiftName.contains("Night") }?.activeBookingsCount ?: 0,
                                 accentColor = Color(0xFF818CF8),
                                 isSelected = selectedShiftFilter == "Night Shift",
@@ -355,10 +430,9 @@ fun OwnerBookingsScreen(
                 items(filteredBookings, key = { it.id }) { booking ->
                     BookingRowCard(
                         booking = booking,
+                        reminder = BookingReminderPlanner.plan(booking, nowMillis),
+                        nowMillis = nowMillis,
                         onViewClick = { selectedBookingForDetail = booking },
-                        onSendReminder = {
-                            statusMessage = gmailDraftMessage(launchGmailReminder(context, booking), booking)
-                        },
                         onCancelClick = {
                             val index = bookings.indexOfFirst { it.id == booking.id }
                             if (index != -1) {
@@ -379,17 +453,18 @@ fun OwnerBookingsScreen(
         selectedBookingForDetail?.let { booking ->
             BookingDetailModal(
                 booking = booking,
+                reminder = BookingReminderPlanner.plan(booking, nowMillis),
+                nowMillis = nowMillis,
+                notificationsAllowed = notificationsAllowed,
                 onDismiss = { selectedBookingForDetail = null },
-                onSendReminder = {
-                    statusMessage = gmailDraftMessage(launchGmailReminder(context, booking), booking)
-                },
                 onUpdateShift = { newShift ->
                     val index = bookings.indexOfFirst { it.id == booking.id }
                     if (index != -1) {
                         val updated = booking.copy(shift = newShift)
                         bookings[index] = updated
                         selectedBookingForDetail = updated
-                        GymOwnerRepository.updateBookingReminderSchedule(booking.id, booking.reminderMinutesBefore, newShift)
+                        // The repository change also reschedules this booking's staff reminder
+                        GymOwnerRepository.updateBookingShift(booking.id, newShift)
                         statusMessage = "✓ Shift updated to $newShift for ${booking.customerName}."
                     }
                 },
@@ -436,7 +511,6 @@ private fun ShiftScheduleMiniCard(
     title: String,
     icon: String,
     gymStart: String,
-    reminderAlert: String,
     count: Int,
     accentColor: Color,
     isSelected: Boolean,
@@ -468,73 +542,52 @@ private fun ShiftScheduleMiniCard(
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = "Start: $gymStart", fontSize = 10.sp, color = ByceCoolGray)
-            Text(text = "Suggested: $reminderAlert", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = accentColor)
         }
     }
 }
 
-private fun gmailDraftMessage(opened: Boolean, booking: BookingItem): String =
-    if (opened) {
-        "Gmail draft opened for ${booking.customerName}. Send it from Gmail; it isn't marked as sent here."
+// Android 8+ has a per-app notification settings page; older versions use the app info page
+private fun openNotificationSettings(context: Context) {
+    val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
     } else {
-        "Couldn't open an email app on this device."
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
     }
-
-// Opens a pre-filled email draft. Returns false when no email app can handle it.
-private fun launchGmailReminder(
-    context: Context,
-    booking: BookingItem
-): Boolean {
-    val subject = "Reminder: Your ${booking.shift} at Iron House Fitness"
-    val body = """
-        Hi ${booking.customerName},
-
-        This is a reminder from Iron House Fitness about your upcoming workout session.
-
-        =======================================
-        RESERVATION DETAILS:
-        • Shift: ${booking.shift}
-        • Date: ${booking.date}
-        • Slot Time: ${booking.time}
-        • Gym: Iron House Fitness, Kozhikode
-        • Membership Plan: ${booking.membershipPlan}
-        =======================================
-
-        Gym Guidelines:
-        • Please arrive 10 minutes prior for barcode/pass check-in.
-        • Clean indoor training shoes are mandatory.
-        • Bring your workout towel and water bottle.
-
-        See you on the floor!
-
-        Warm regards,
-        Iron House Fitness / BYCE Gym Team
-    """.trimIndent()
-
-    val emailUri = Uri.parse("mailto:${booking.customerEmail}?subject=${Uri.encode(subject)}&body=${Uri.encode(body)}")
-    val gmailIntent = Intent(Intent.ACTION_SENDTO, emailUri).apply {
-        setPackage("com.google.android.gm")
+    try {
+        context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    } catch (_: Exception) {
+        // No settings screen available; the card keeps showing that notifications are off
     }
+}
 
-    return try {
-        context.startActivity(gmailIntent)
-        true
-    } catch (e: Exception) {
-        val fallbackIntent = Intent(Intent.ACTION_SENDTO, emailUri)
-        try {
-            context.startActivity(fallbackIntent)
-            true
-        } catch (_: Exception) {
-            false
-        }
+// "05:30 PM" for today, "Tomorrow 06:00 AM" or "12 Oct, 06:00 AM" otherwise
+private fun formatReminderTime(triggerAtMillis: Long, nowMillis: Long): String {
+    val time = SimpleDateFormat("hh:mm a", Locale.US).format(Date(triggerAtMillis))
+    val now = Calendar.getInstance().apply { timeInMillis = nowMillis }
+    val trigger = Calendar.getInstance().apply { timeInMillis = triggerAtMillis }
+    val dayDiff = (trigger.get(Calendar.YEAR) - now.get(Calendar.YEAR)) * 366 +
+        trigger.get(Calendar.DAY_OF_YEAR) - now.get(Calendar.DAY_OF_YEAR)
+    return when (dayDiff) {
+        0 -> time
+        1 -> "Tomorrow $time"
+        else -> "${SimpleDateFormat("dd MMM", Locale.US).format(Date(triggerAtMillis))}, $time"
+    }
+}
+
+private fun reminderLabel(reminder: BookingReminderPlan, nowMillis: Long): String = when (reminder) {
+    is BookingReminderPlan.Scheduled -> "Reminder ${formatReminderTime(reminder.triggerAtMillis, nowMillis)}"
+    is BookingReminderPlan.NotScheduled -> when (reminder.reason) {
+        NoReminderReason.CANCELLED, NoReminderReason.COMPLETED, NoReminderReason.UNKNOWN_TIME -> "No reminder"
+        NoReminderReason.PAST -> "Reminder time passed"
     }
 }
 
 @Composable
 private fun BookingRowCard(
     booking: BookingItem,
+    reminder: BookingReminderPlan,
+    nowMillis: Long,
     onViewClick: () -> Unit,
-    onSendReminder: () -> Unit,
     onCancelClick: () -> Unit,
     onMarkArrived: () -> Unit
 ) {
@@ -574,7 +627,7 @@ private fun BookingRowCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Time & 30-min Reminder Tag
+            // Time & staff reminder tag
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -595,26 +648,27 @@ private fun BookingRowCard(
                     )
                 }
 
-                // 30-minute Reminder Tag
+                // Staff reminder tag
+                val isScheduled = reminder is BookingReminderPlan.Scheduled
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (booking.reminderStatus.contains("Sent", ignoreCase = true)) StatusActiveGreenBg else Color(0x22EA4335))
+                        .background(if (isScheduled) StatusInfoBlueBg else StatusCancelledGrayBg)
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = if (booking.reminderStatus.contains("Sent", ignoreCase = true)) Icons.Default.CheckCircle else Icons.Default.Mail,
+                            imageVector = if (isScheduled) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff,
                             contentDescription = null,
-                            tint = if (booking.reminderStatus.contains("Sent", ignoreCase = true)) StatusActiveGreen else Color(0xFFEA4335),
+                            tint = if (isScheduled) StatusInfoBlue else StatusCancelledGray,
                             modifier = Modifier.size(11.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (booking.reminderStatus.contains("Sent", ignoreCase = true)) "Reminder sent" else "No reminder sent",
+                            text = reminderLabel(reminder, nowMillis),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (booking.reminderStatus.contains("Sent", ignoreCase = true)) StatusActiveGreen else Color(0xFFEA4335)
+                            color = if (isScheduled) StatusInfoBlue else StatusCancelledGray
                         )
                     }
                 }
@@ -625,29 +679,9 @@ private fun BookingRowCard(
             // Action Buttons Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Quick Send Gmail Reminder Button
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFEA4335).copy(alpha = 0.18f))
-                        .clickable { onSendReminder() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Send, contentDescription = "Open Gmail draft", tint = Color(0xFFEA4335), modifier = Modifier.size(12.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Open Gmail draft",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFEA4335)
-                        )
-                    }
-                }
-
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (booking.arrivalStatus != "Checked In" && booking.status != "Cancelled") {
                         Box(
@@ -761,13 +795,14 @@ private fun ArrivalStatusBadge(arrivalStatus: String) {
 @Composable
 private fun BookingDetailModal(
     booking: BookingItem,
+    reminder: BookingReminderPlan,
+    nowMillis: Long,
+    notificationsAllowed: Boolean,
     onDismiss: () -> Unit,
-    onSendReminder: () -> Unit,
     onUpdateShift: (String) -> Unit,
     onCancelBooking: () -> Unit,
     onMarkArrived: () -> Unit = {}
 ) {
-    val shiftStart = booking.time.split("-").firstOrNull()?.trim() ?: "06:00 PM"
     var selectedShift by remember { mutableStateOf(booking.shift) }
 
     OwnerModalDialog(onDismissRequest = onDismiss) {
@@ -842,7 +877,7 @@ private fun BookingDetailModal(
             Spacer(modifier = Modifier.height(14.dp))
 
             // ----------------------------------------------------------------
-            // 30-MINUTE GMAIL REMINDER CONTROL PANEL
+            // STAFF REMINDER ON THIS DEVICE
             // ----------------------------------------------------------------
             Box(
                 modifier = Modifier
@@ -858,24 +893,24 @@ private fun BookingDetailModal(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = Color(0xFFEA4335), modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = StatusInfoBlue, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = "Pre-Session Reminder", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                            Text(text = "Staff Reminder", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextWhite)
                         }
 
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFFEA4335).copy(alpha = 0.2f))
+                                .background(StatusInfoBlueBg)
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
-                            Text(text = "Via Gmail", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEA4335))
+                            Text(text = "This device", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusInfoBlue)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Automatic reminders: Not available yet. Open a Gmail draft to remind the member yourself, ideally 30 minutes before the shift starts ($shiftStart).",
+                        text = "A notification appears on this phone ${BookingReminderPlanner.MINUTES_BEFORE} minutes before the session starts. The member isn't notified.",
                         fontSize = 11.sp,
                         color = ByceCoolGray,
                         lineHeight = 15.sp
@@ -885,31 +920,27 @@ private fun BookingDetailModal(
                     Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x18FFFFFF)))
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    BookingDetailRow("Recipient", booking.customerEmail)
-                    BookingDetailRow("Suggested Timing", "30 Minutes Before Gym Start")
-                    BookingDetailRow("Reminder Status", booking.reminderStatus)
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Open in Gmail Button
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFFEA4335), Color(0xFFC5221F))
-                                )
-                            )
-                            .clickable { onSendReminder() }
-                            .padding(vertical = 11.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Send, contentDescription = "Send", tint = TextWhite, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = "✉️ Open Gmail draft", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                    BookingDetailRow(
+                        "Reminder",
+                        when (reminder) {
+                            is BookingReminderPlan.Scheduled -> formatReminderTime(reminder.triggerAtMillis, nowMillis)
+                            is BookingReminderPlan.NotScheduled -> when (reminder.reason) {
+                                NoReminderReason.CANCELLED -> "None (cancelled)"
+                                NoReminderReason.COMPLETED -> "None (completed)"
+                                NoReminderReason.PAST -> "Time has passed"
+                                NoReminderReason.UNKNOWN_TIME -> "None (no start time)"
+                            }
                         }
+                    )
+                    BookingDetailRow("Shown to", "Staff on this device")
+                    if (!notificationsAllowed && reminder is BookingReminderPlan.Scheduled) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Notifications are off for BYCE Partner, so this reminder won't appear.",
+                            fontSize = 11.sp,
+                            color = StatusPendingAmber,
+                            lineHeight = 15.sp
+                        )
                     }
                 }
             }

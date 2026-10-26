@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.example.notifications.BookingReminderScheduler
 import com.example.ui.auth.AuthScreen
 import com.example.ui.owner.GymOwnerMainScreen
 import com.example.ui.theme.MyApplicationTheme
@@ -24,6 +25,7 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
+    BookingReminderScheduler.install(this)
     setContent {
       MyApplicationTheme {
         // Always open on login; saveable so rotation doesn't sign the user out
