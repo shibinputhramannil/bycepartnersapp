@@ -8,7 +8,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.ui.auth.AuthScreen
@@ -26,7 +26,8 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     setContent {
       MyApplicationTheme {
-        var currentScreen by remember { mutableStateOf(AppScreen.GYM_OWNER_DASHBOARD) }
+        // Always open on login; saveable so rotation doesn't sign the user out
+        var currentScreen by rememberSaveable { mutableStateOf(AppScreen.AUTH) }
 
         Crossfade(targetState = currentScreen, label = "screen_transition") { screen ->
           when (screen) {
